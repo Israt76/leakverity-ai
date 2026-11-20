@@ -95,7 +95,7 @@ def certificate_html(r: dict) -> str:
         dag = " <span class='src'>(protocol change: different test rows)</span>" if (att.get(f.get("fix")) or {}).get("changes_test_population") else ""
         if f.get("proposed"):
             dag += " <span class='src'>(proposed: evaluated both ways)</span>"
-        rows.append(f"<tr><td>{_title(f['title'])}{dag}<div class='src'>{_e(f.get('source', ''))}</div></td>"
+        rows.append(f"<tr><td>{_title(f['title'])}{dag}<div class='src'>{_e(f.get('source', ''))} · repair category: {_e(f.get('fix') or 'none')}</div></td>"
                     f"<td class='n'>{_f(imp.get('mean'))}</td><td class='n'>{_f(imp.get('lo'))} to {_f(imp.get('hi'))}</td>"
                     f"<td class='n'>{_f(imp.get('last'))}</td><td><span class='st st-{_e(imp.get('status', 'na'))}'>{STATUS_TEXT.get(imp.get('status'), '—')}</span></td></tr>")
     surv = r.get("survival") or {}
@@ -162,9 +162,9 @@ td{{border-bottom:1px solid var(--rule);padding:8px 8px 8px 0;vertical-align:top
 Fidelity check: replaying the original protocol reproduced {_f(rp.get('fidelity_value'), 4)} (reported {_f(rp.get('reported'), 4)}).</p>
 <p class="meta">Corrected code {'<b style="color:var(--ok)">verified by execution</b>' if ver.get('verified') else 'not verified'}{f": printed {_f(ver.get('value'), 6)}, replay engine {_f(ver.get('expected'), 6)}" if ver else ''}.</p>
 </div></div>
-<h2>Leaks found and what each one changed</h2>
-<table><tr><th>Finding</th><th>Fair share</th><th>95% CI</th><th>Once others fixed</th><th>Effect</th></tr>{''.join(rows) or '<tr><td colspan=5>No leakage found.</td></tr>'}</table>
-<p class="meta">Fair share = exact Shapley attribution of the change across every order of applying the fixes, so interacting leaks are not double-counted.
+<h2>Leakage findings and repair-category effects</h2>
+<table><tr><th>Finding (repair category)</th><th>Fair share</th><th>95% CI</th><th>Once others fixed</th><th>Effect</th></tr>{''.join(rows) or '<tr><td colspan=5>No leakage found.</td></tr>'}</table>
+<p class="meta">Fair share = exact Shapley allocation of the observed change across repair categories and every order of applying fixes. Multiple findings may share one repair category: repeated shares reflect the same joint category effect, not separate feature contributions.
 Rows marked "protocol change" alter which rows are in the test set: their share is a protocol-dependent change in performance under the corrected evaluation, not a proven causal effect of the leak.</p>
 {('<h2>Features for the author to review</h2><p class="meta">Flagged by name only, with ordinary predictive power. Not removed, because removing a legitimate predictor would also lower the score: ' + ', '.join('<code>' + _e(f.get('column')) + '</code>' for f in review) + '.</p>') if review else ''}
 <h2>Repair verification</h2>

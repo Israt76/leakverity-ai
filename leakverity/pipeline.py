@@ -214,8 +214,9 @@ def audit(code_name: str, code_bytes: bytes, data_name: str, data_bytes: bytes, 
         a = rr.attribution.get(f.get("fix"))
         if a:
             f["impact"] = {k: a[k] for k in ("mean", "lo", "hi", "status", "alone", "last", "last_lo", "last_hi")}
-            f["impact_text"] = (f"Fixing this lowers the {verdict.metric_label(sp.metric)} by {a['mean']:.3f} on a fair share basis "
-                                f"(95% CI {a['lo']:.3f} to {a['hi']:.3f}); {a['alone']:.3f} if fixed alone, {a['last']:.3f} once all other leaks are fixed.")
+            f["impact_text"] = (f"The {f.get('fix')} repair category has a {verdict.metric_label(sp.metric)} fair-share allocation of {a['mean']:.3f} "
+                                f"(95% CI {a['lo']:.3f} to {a['hi']:.3f}); the category changes the score by {a['alone']:.3f} alone "
+                                f"and {a['last']:.3f} after other categories are corrected. This is not a separate causal effect for this finding.")
 
     # 6. repair + verification ----------------------------------------------------------
     prog("repair", "Generating the corrected notebook…")

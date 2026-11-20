@@ -16,7 +16,7 @@ Existing tools answer "does this notebook contain a leakage pattern?" LeakVerity
 
 1. **Execution evidence instead of code patterns alone.** Splits, fits and metrics are traced at runtime: which rows each step saw, how many test rows duplicate training rows, which candidates were scored on the test labels.
 2. **Fidelity-gated replay.** Before any counterfactual, the reconstructed protocol must reproduce the author's own number, or the tool abstains.
-3. **Impact per leak, with interactions.** Every combination of fixes is re-run, and the inflation is attributed with exact Shapley values and corrected CIs. A detected violation with negligible effect is reported as negligible, consistent with Roth (2026).
+3. **Measured impact of repair categories, with interactions.** Every combination of supported fixes is re-run; the observed score difference is allocated across repair categories with exact Shapley values and corrected CIs. Several findings may share a category, and changes to the evaluation population are protocol-dependent, not isolated causal effects of individual leaks. A category with negligible observed impact is reported as such, consistent with Roth (2026).
 4. **Repairs verified by execution.** The corrected notebook is run, and its output must match the replay engine.
 5. **Claim-level verdicts.** Pre-registered rules turn the evidence, plus stability, subgroup and time-based survival tests, into Supported / Overstated / Contradicted / Insufficient evidence, issued as a certificate with input hashes.
 

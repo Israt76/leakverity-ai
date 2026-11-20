@@ -210,8 +210,8 @@ function renderInvestigate() {
   const items = finds.map((f) => {
     const imp = f.impact || {};
     const eff = f.needs_review ? `<span class="chip uncertain">note</span><div class="k" style="margin-top:6px">Does not affect the verdict</div>`
-      : f.proposed && imp.mean !== undefined ? `<div class="v">${signed(imp.mean)}</div><div class="k">if confirmed, fair share</div><span class="chip small">proposed: evaluated both ways</span>`
-      : imp.mean !== undefined ? `<div class="v">${signed(imp.mean)}</div><div class="k">${esc(p.metric_label)} once fixed, fair share</div>
+      : f.proposed && imp.mean !== undefined ? `<div class="v">${signed(imp.mean)}</div><div class="k">if confirmed, repair-category fair share</div><span class="chip small">proposed: evaluated both ways</span>`
+      : imp.mean !== undefined ? `<div class="v">${signed(imp.mean)}</div><div class="k">${esc(p.metric_label)} repair-category fair share</div>
         <span class="chip ${esc(imp.status)}">${esc(STATUS[imp.status] || imp.status)}</span>` : `<div class="k">Not measured</div>`;
     return `<article class="finding"><div>
         <h3>${esc(f.title).replace(/`([^`]+)`/g, "<code>$1</code>")}</h3>
@@ -301,10 +301,10 @@ function renderImpact() {
   const seeds = rp.seeds.map((s, i) => `<tr><td class="n">${s}${i === 0 ? " (yours)" : ""}</td><td class="n">${f3(rp.original.values[i])}</td><td class="n">${f3(rp.corrected.values[i])}</td><td class="n">${f3(rp.original.values[i] - rp.corrected.values[i])}</td></tr>`).join("");
   el.innerHTML = claimHead() + `<div class="impact-grid">
       <div class="gauge">${R.gauge_svg || ""}</div>
-      <div><h2>Where the ${f3(rp.inflation.from_reported)} of inflation came from</h2>
+      <div><h2>How the ${f3(rp.inflation.from_reported)} score difference is allocated</h2>
         <p class="note">Every fix was applied in every combination and the experiment re-run on ${rp.seeds.length} random splits (${rp.runs} runs, ${Math.round(rp.seconds)} s).
-        <i>Alone</i> is the drop when only that fix is applied; <i>once others fixed</i> is the drop it still causes after every other leak is repaired; the <i>fair share</i> is the Shapley average over all orders, so shares add up to the total.</p>
-        ${att.length ? `<table class="t"><tr><th>Leak</th><th>Alone</th><th>Once others fixed</th><th>Fair share</th></tr>${rows}</table>
+        <i>Alone</i> is the drop when only that fix is applied; <i>once others fixed</i> is the drop it still causes after every other leak is repaired; the <i>fair share</i> is the Shapley average over all orders, so shares add up to the total. These allocations belong to repair categories, which may represent several findings; they are not independent causal effects for each feature.</p>
+        ${att.length ? `<table class="t"><tr><th>Repair category</th><th>Alone</th><th>Once others fixed</th><th>Fair share</th></tr>${rows}</table>
           ${att.some(([, a]) => a.changes_test_population) ? `<p class="small">"Protocol change" fixes alter which rows are in the test set, so their share is a protocol-dependent change in performance, not a proven causal effect of the leak.</p>` : ""}` : `<p class="none-found">No leaks to attribute.</p>`}
       </div></div>
       <div class="seeds"><h2>Every split, before and after</h2>
