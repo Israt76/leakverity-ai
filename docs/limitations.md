@@ -1,0 +1,21 @@
+# Limitations (stated up front)
+
+**Supported experiments.** Python notebooks or scripts that use pandas and scikit-learn (plus imbalanced-learn, XGBoost and LightGBM estimators) for tabular **binary classification** with a **hold-out split** (`train_test_split`, `ShuffleSplit`, `StratifiedShuffleSplit`, `GroupShuffleSplit`). K-fold cross-validation loops are detected and traced but not yet replayed. LeakVerity abstains instead of guessing.
+
+**Replay needs literal parameters.** Numbers, strings, tuples and scikit-learn/NumPy/SciPy functions (such as `SelectKBest(f_classif)`) are supported. Estimators whose parameters are other objects (for example a `GridSearchCV` wrapping a pipeline) are not rebuilt yet, and LeakVerity abstains. Hyper-parameter search *inside* the training data is not leakage and is supported when written as an explicit loop.
+
+**Leaks introduced before the design matrix.** Look-ahead features built in pandas are caught statically when they match a known pattern: centred rolling windows, negative `shift`, backward fill, or `groupby(...)[target].transform`. A syntax match alone does not prove future leakage, because rows may not be in time order. Order-dependent patterns are fixed automatically only when the rows are sorted by a date column (or the code sorts them); otherwise they are proposed and evaluated both ways. Removing them is measured, but they cannot be recomputed causally, so the correction is conservative. Other whole-dataset statistics computed before the split (for example `df["x"] - df["x"].mean()`) are part of the captured design matrix and are not detected.
+
+**Evaluation scope.** The headline benchmark is synthetic with known ground truth. The independent set is 12 hand-written notebooks, partly on real data, but it is still small and written by the same team. Neither replaces evaluation on real third-party notebooks (for example public Kaggle notebooks, with licences checked), which has not been done yet and is the next step.
+
+**Semantic judgements can be wrong.** Whether a feature is available at prediction time depends on domain knowledge. The rule-based reader works from column names and can miss oddly named features or flag legitimate ones. Replay measures what *removing* a flagged feature does, but it cannot tell a leak from a legitimately strong predictor. That judgement stays with the user: suspected features are only *proposed*, the verdict is reported for both possibilities, and it reads *Depends on review* when they disagree. This is deliberately less automatic: on the generated benchmark, a reviewer must confirm the planted future features before the verdict settles.
+
+**Group-aware fixes change the test population.** When a fix changes how rows are split, the before/after comparison is paired by split seed but not by test row, so it measures a *change of protocol*, not an isolated causal effect of one leak.
+
+**No external validity.** Passing the survival tests means the claim holds under a leak-free protocol on the uploaded data. It does not show the model works at another hospital, on another population, or in the future beyond the data provided.
+
+**Cost.** Exact Shapley attribution re-runs the experiment 2^(k−1) × J times for k fixes and J splits. Quick mode (J = 3) takes about two minutes for the demo notebook on 2 CPU cores.
+
+**Survival tests on small data.** With fewer than 50 test rows, stability and time-based tests are reported as inconclusive; subgroup tests need 15 cases per class per split. These are rules of thumb, not power calculations.
+
+**Sandboxing.** Uploads are disabled by default (in the app and the image) and must be turned on with `LEAKVERITY_ALLOW_UPLOADS=1`. Audit jobs are held in memory under unguessable ids and deleted after two hours; there are no user accounts. The process sandbox runs uploaded code in a separate process with network sockets disabled, CPU, memory and file-size limits, a wall-clock timeout, a throwaway working directory and no secrets in its environment. That is defence in depth, not a security boundary against a determined attacker. For untrusted uploads, use the container mode (`LEAKVERITY_SANDBOX=docker`, see `docs/security.md`), which was implemented but not exercised in the development environment.

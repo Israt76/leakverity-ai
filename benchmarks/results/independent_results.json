@@ -1,0 +1,334 @@
+{
+ "summary": {
+  "cases": 12,
+  "detection_exact": 12,
+  "tp": 7,
+  "fp": 0,
+  "fn": 0,
+  "verdict_ok": 11,
+  "repairs_verified": 7,
+  "repairs_attempted": 7
+ },
+ "rows": [
+  {
+   "case": "c01_bc_clean",
+   "tests": "real data, leak-free; strong genuine features must not be removed",
+   "expected": [],
+   "found": [],
+   "review": [
+    "mean_concave_points",
+    "worst_area",
+    "worst_concave_points",
+    "worst_perimeter",
+    "worst_radius"
+   ],
+   "verdict": "Supported",
+   "acceptable": [
+    "Supported"
+   ],
+   "verdict_ok": true,
+   "detection_ok": true,
+   "repair_verified": null,
+   "reported": 0.9956191588785047,
+   "verified": 0.9948403426791277,
+   "reason": "The claimed AUC of 0.990 is consistent with the verified estimate 0.995 (95% CI 0.966\u20130.999).",
+   "seconds": 3.2,
+   "conditional": false,
+   "reference": 0.9950858943497332,
+   "gt_verdict": "Supported"
+  },
+  {
+   "case": "c02_bc_scaler_first",
+   "tests": "textbook scaler leak; module-style imports, NumPy arrays; impact should be negligible",
+   "expected": [
+    "preprocessing"
+   ],
+   "found": [
+    "preprocessing"
+   ],
+   "review": [
+    "mean_concave_points",
+    "worst_area",
+    "worst_concave_points",
+    "worst_perimeter",
+    "worst_radius"
+   ],
+   "verdict": "Supported",
+   "acceptable": [
+    "Supported"
+   ],
+   "verdict_ok": true,
+   "detection_ok": true,
+   "repair_verified": true,
+   "reported": 0.9984946236559139,
+   "verified": 0.9969220127985213,
+   "reason": "The claimed AUC of 0.998 is consistent with the verified estimate 0.997 (95% CI 0.995\u20130.997).",
+   "seconds": 6.0,
+   "conditional": false,
+   "reference": 0.9945505245079432,
+   "gt_verdict": "Supported"
+  },
+  {
+   "case": "c03_noise_selectkbest",
+   "tests": "feature selection on all data with pure-noise features; truth is chance",
+   "expected": [
+    "preprocessing"
+   ],
+   "found": [
+    "preprocessing"
+   ],
+   "review": [],
+   "verdict": "Insufficient evidence",
+   "acceptable": [
+    "Contradicted"
+   ],
+   "verdict_ok": false,
+   "detection_ok": true,
+   "repair_verified": true,
+   "reported": 0.7597330367074527,
+   "verified": 0.5393309659257731,
+   "reason": "The corrected estimate 0.539 (95% CI 0.297\u20130.765) is too uncertain to confirm the claimed AUC of 0.760: it neither rules the claim out nor shows performance above chance (0.50). More data or more repl",
+   "seconds": 12.4,
+   "conditional": false,
+   "reference": 0.48236666666666667,
+   "gt_verdict": "Contradicted"
+  },
+  {
+   "case": "c04_smote_first",
+   "tests": "SMOTE before the split",
+   "expected": [
+    "resampling"
+   ],
+   "found": [
+    "resampling"
+   ],
+   "review": [],
+   "verdict": "Overstated",
+   "acceptable": [
+    "Overstated"
+   ],
+   "verdict_ok": true,
+   "detection_ok": true,
+   "repair_verified": true,
+   "reported": 0.9961917230703357,
+   "verified": 0.8966073726797257,
+   "reason": "The claimed AUC of 0.996 is above what survives correction: 0.897 (95% CI 0.715\u20130.970). Across the replayed splits the corrected result was reliably lower: paired inflation 0.099 (one-sided 95% lower ",
+   "seconds": 17.9,
+   "conditional": false,
+   "reference": 0.8930484574775595,
+   "gt_verdict": "Overstated"
+  },
+  {
+   "case": "c05_cross_val",
+   "tests": "cross-validation protocol: must abstain",
+   "expected": [],
+   "found": [],
+   "review": [],
+   "verdict": "Insufficient evidence",
+   "acceptable": [
+    "Insufficient evidence"
+   ],
+   "verdict_ok": true,
+   "detection_ok": true,
+   "repair_verified": null,
+   "reported": null,
+   "verified": null,
+   "reason": "The evaluation uses StratifiedKFold with 5 folds. Cross-validation loops are detected but not yet replayed; only hold-out splits are.",
+   "seconds": null,
+   "conditional": false,
+   "reference": null,
+   "gt_verdict": "Insufficient evidence"
+  },
+  {
+   "case": "c06_gridsearch",
+   "tests": "GridSearchCV object: must abstain, not guess",
+   "expected": [],
+   "found": [],
+   "review": [],
+   "verdict": "Insufficient evidence",
+   "acceptable": [
+    "Insufficient evidence"
+   ],
+   "verdict_ok": true,
+   "detection_ok": true,
+   "repair_verified": null,
+   "reported": null,
+   "verified": null,
+   "reason": "No model was trained after the split.",
+   "seconds": null,
+   "conditional": false,
+   "reference": null,
+   "gt_verdict": "Insufficient evidence"
+  },
+  {
+   "case": "c07_wine_tuned_on_test",
+   "tests": "k tuned on the test set inside a helper function; accuracy metric",
+   "expected": [
+    "test_selection"
+   ],
+   "found": [
+    "test_selection"
+   ],
+   "review": [
+    "proline"
+   ],
+   "verdict": "Supported",
+   "acceptable": [
+    "Overstated",
+    "Supported"
+   ],
+   "verdict_ok": true,
+   "detection_ok": true,
+   "repair_verified": true,
+   "reported": 0.9814814814814815,
+   "verified": 0.9444444444444445,
+   "reason": "The claimed accuracy of 0.981 is consistent with the verified estimate 0.944 (95% CI 0.815\u20130.986).",
+   "seconds": 7.7,
+   "conditional": false,
+   "reference": 0.9773650793650793,
+   "gt_verdict": "Supported"
+  },
+  {
+   "case": "c08_bc_exported_twice",
+   "tests": "records exported twice (same sample_id)",
+   "expected": [
+    "duplicates"
+   ],
+   "found": [
+    "duplicates"
+   ],
+   "review": [
+    "mean_concave_points",
+    "worst_area",
+    "worst_concave_points",
+    "worst_perimeter",
+    "worst_radius"
+   ],
+   "verdict": "Supported",
+   "acceptable": [
+    "Overstated",
+    "Supported"
+   ],
+   "verdict_ok": true,
+   "detection_ok": true,
+   "repair_verified": true,
+   "reported": 0.972761970853574,
+   "verified": 0.995658294910546,
+   "reason": "The claimed AUC of 0.973 is consistent with the verified estimate 0.996 (95% CI 0.978\u20130.999).",
+   "seconds": 14.1,
+   "conditional": false,
+   "reference": 0.989892747960632,
+   "gt_verdict": "Supported"
+  },
+  {
+   "case": "c09_sensor_centered_rolling",
+   "tests": "future-peeking (centred) rolling mean built in pandas before scikit-learn",
+   "expected": [
+    "future_features"
+   ],
+   "found": [
+    "future_features"
+   ],
+   "review": [],
+   "verdict": "Overstated",
+   "acceptable": [
+    "Overstated"
+   ],
+   "verdict_ok": true,
+   "detection_ok": true,
+   "repair_verified": true,
+   "reported": 0.7709718265273822,
+   "verified": 0.7373411282754438,
+   "reason": "The claimed AUC of 0.771 is above what survives correction: 0.737 (95% CI 0.604\u20130.839). Across the replayed splits the corrected result was reliably lower: paired inflation 0.044 (one-sided 95% lower ",
+   "seconds": 5.1,
+   "conditional": false,
+   "reference": 0.6472976696865366,
+   "gt_verdict": "Overstated"
+  },
+  {
+   "case": "c10_bc_clean_groupless_proba",
+   "tests": "leak-free with internal early stopping",
+   "expected": [],
+   "found": [],
+   "review": [
+    "mean_concave_points",
+    "worst_area",
+    "worst_concave_points",
+    "worst_perimeter",
+    "worst_radius"
+   ],
+   "verdict": "Supported",
+   "acceptable": [
+    "Supported"
+   ],
+   "verdict_ok": true,
+   "detection_ok": true,
+   "repair_verified": null,
+   "reported": 0.9837908878504673,
+   "verified": 0.9860299844236761,
+   "reason": "The claimed AUC of 0.984 is consistent with the verified estimate 0.986 (95% CI 0.869\u20130.999).",
+   "seconds": 5.0,
+   "conditional": false,
+   "reference": 0.9914048416251169,
+   "gt_verdict": "Supported"
+  },
+  {
+   "case": "c11_bc_centered_no_time",
+   "tests": "AMBIGUOUS: centred window, no time order, computed before the split: proposed (not removed), evaluated both ways",
+   "expected": [
+    "proposed_features"
+   ],
+   "found": [
+    "proposed_features"
+   ],
+   "review": [
+    "mean_concave_points",
+    "worst_area",
+    "worst_concave_points",
+    "worst_perimeter",
+    "worst_radius"
+   ],
+   "verdict": "Supported",
+   "acceptable": [
+    "Supported"
+   ],
+   "verdict_ok": true,
+   "detection_ok": true,
+   "repair_verified": true,
+   "reported": 0.9976635514018691,
+   "verified": 0.9955704828660435,
+   "reason": "The claimed AUC of 0.998 is consistent with the verified estimate 0.996 (95% CI 0.961\u20131.000). This verdict holds whether or not the proposed leak (`radius_local`) is confirmed.",
+   "seconds": 5.8,
+   "conditional": true,
+   "reference": 0.9950721079274959,
+   "gt_verdict": "Supported"
+  },
+  {
+   "case": "c12_bc_rowwise_features",
+   "tests": "clean control: row-wise engineered features; unconditional Supported expected",
+   "expected": [],
+   "found": [],
+   "review": [
+    "mean_concave_points",
+    "worst_area",
+    "worst_concave_points",
+    "worst_perimeter",
+    "worst_radius"
+   ],
+   "verdict": "Supported",
+   "acceptable": [
+    "Supported"
+   ],
+   "verdict_ok": true,
+   "detection_ok": true,
+   "repair_verified": null,
+   "reported": 1.0,
+   "verified": 0.9965440031152649,
+   "reason": "The claimed AUC of 1.000 is consistent with the verified estimate 0.997 (95% CI 0.966\u20131.000).",
+   "seconds": 2.9,
+   "conditional": false,
+   "reference": 0.9954553721987394,
+   "gt_verdict": "Supported"
+  }
+ ]
+}

@@ -1,0 +1,716 @@
+{
+ "summary": {
+  "scenarios": 24,
+  "clean": 6,
+  "per_type": {
+   "preprocessing": {
+    "tp": 10,
+    "fn": 0,
+    "fp": 0,
+    "precision": 1.0,
+    "recall": 1.0
+   },
+   "duplicates": {
+    "tp": 11,
+    "fn": 0,
+    "fp": 0,
+    "precision": 1.0,
+    "recall": 1.0
+   },
+   "group_overlap": {
+    "tp": 17,
+    "fn": 0,
+    "fp": 0,
+    "precision": 1.0,
+    "recall": 1.0
+   },
+   "future_features": {
+    "tp": 10,
+    "fn": 0,
+    "fp": 0,
+    "precision": 1.0,
+    "recall": 1.0
+   },
+   "test_selection": {
+    "tp": 10,
+    "fn": 0,
+    "fp": 0,
+    "precision": 1.0,
+    "recall": 1.0
+   }
+  },
+  "precision": 1.0,
+  "recall": 1.0,
+  "clean_false_alarm_rate": 0.0,
+  "decoy_flag_rate": 0.0,
+  "fidelity_rate": 1.0,
+  "repair_verified_rate": 1.0,
+  "mean_abs_error_reported": 0.0922901063466373,
+  "mean_abs_error_verified": 0.021210449440600094,
+  "ci_coverage_of_truth": 0.9583333333333334,
+  "verdict_agreement": 0.4583333333333333,
+  "depends_on_review_rate": 0.4166666666666667,
+  "verdict_agreement_if_confirmed": 0.875,
+  "false_reversal_rate": 0.0,
+  "overstated_caught_rate": 0.7692307692307693,
+  "minutes": 4.2
+ },
+ "rows": [
+  {
+   "id": "S00",
+   "model": "lr",
+   "planted": [],
+   "found": [],
+   "flagged_decoy": false,
+   "decoy_used": false,
+   "fidelity": true,
+   "repair_verified": null,
+   "reported": 0.7218811491538765,
+   "verified": 0.7306305613473173,
+   "ci": [
+    0.6848795776054857,
+    0.7721625194072671
+   ],
+   "truth": 0.7282358967771231,
+   "verdict": "Supported",
+   "gt_verdict": "Supported",
+   "seconds": 2.9,
+   "confirmed_verdict": null
+  },
+  {
+   "id": "S01",
+   "model": "rf",
+   "planted": [
+    "duplicates",
+    "future_features",
+    "group_overlap",
+    "preprocessing",
+    "test_selection"
+   ],
+   "found": [
+    "duplicates",
+    "future_features",
+    "group_overlap",
+    "preprocessing",
+    "test_selection"
+   ],
+   "flagged_decoy": false,
+   "decoy_used": false,
+   "fidelity": true,
+   "repair_verified": true,
+   "reported": 0.9421207065186123,
+   "verified": 0.6475864214440271,
+   "ci": [
+    0.49200586324409495,
+    0.7782445228534904
+   ],
+   "truth": 0.7058788666356671,
+   "verdict": "Depends on review",
+   "gt_verdict": "Overstated",
+   "seconds": 38.0,
+   "confirmed_verdict": "Overstated"
+  },
+  {
+   "id": "S02",
+   "model": "rf",
+   "planted": [
+    "future_features",
+    "group_overlap"
+   ],
+   "found": [
+    "future_features",
+    "group_overlap"
+   ],
+   "flagged_decoy": false,
+   "decoy_used": true,
+   "fidelity": true,
+   "repair_verified": true,
+   "reported": 0.8959425717852685,
+   "verified": 0.7552441501049607,
+   "ci": [
+    0.6716043871973528,
+    0.8238989750910026
+   ],
+   "truth": 0.7110652852997229,
+   "verdict": "Depends on review",
+   "gt_verdict": "Overstated",
+   "seconds": 7.6,
+   "confirmed_verdict": "Overstated"
+  },
+  {
+   "id": "S03",
+   "model": "lr",
+   "planted": [
+    "group_overlap",
+    "preprocessing"
+   ],
+   "found": [
+    "group_overlap",
+    "preprocessing"
+   ],
+   "flagged_decoy": false,
+   "decoy_used": true,
+   "fidelity": true,
+   "repair_verified": true,
+   "reported": 0.7337225274725274,
+   "verified": 0.7555044203331698,
+   "ci": [
+    0.6361716538282499,
+    0.8463993596283894
+   ],
+   "truth": 0.7340023038980309,
+   "verdict": "Supported",
+   "gt_verdict": "Supported",
+   "seconds": 5.7,
+   "confirmed_verdict": null
+  },
+  {
+   "id": "S04",
+   "model": "lr",
+   "planted": [],
+   "found": [],
+   "flagged_decoy": false,
+   "decoy_used": true,
+   "fidelity": true,
+   "repair_verified": null,
+   "reported": 0.715368233371304,
+   "verified": 0.731565656563918,
+   "ci": [
+    0.6371285522848078,
+    0.8095481573500993
+   ],
+   "truth": 0.7454611501340475,
+   "verdict": "Supported",
+   "gt_verdict": "Supported",
+   "seconds": 2.7,
+   "confirmed_verdict": null
+  },
+  {
+   "id": "S05",
+   "model": "lr",
+   "planted": [
+    "duplicates",
+    "group_overlap"
+   ],
+   "found": [
+    "duplicates",
+    "group_overlap"
+   ],
+   "flagged_decoy": false,
+   "decoy_used": true,
+   "fidelity": true,
+   "repair_verified": true,
+   "reported": 0.7484713629291943,
+   "verified": 0.7267452246648453,
+   "ci": [
+    0.707131144722626,
+    0.7455624911982335
+   ],
+   "truth": 0.7375486066236259,
+   "verdict": "Supported",
+   "gt_verdict": "Supported",
+   "seconds": 5.6,
+   "confirmed_verdict": null
+  },
+  {
+   "id": "S06",
+   "model": "lr",
+   "planted": [
+    "group_overlap",
+    "preprocessing",
+    "test_selection"
+   ],
+   "found": [
+    "group_overlap",
+    "preprocessing",
+    "test_selection"
+   ],
+   "flagged_decoy": false,
+   "decoy_used": false,
+   "fidelity": true,
+   "repair_verified": true,
+   "reported": 0.7536057088295893,
+   "verified": 0.7145488867031481,
+   "ci": [
+    0.6049844744629177,
+    0.8044960639188157
+   ],
+   "truth": 0.7382416184904571,
+   "verdict": "Supported",
+   "gt_verdict": "Supported",
+   "seconds": 6.5,
+   "confirmed_verdict": null
+  },
+  {
+   "id": "S07",
+   "model": "lr",
+   "planted": [
+    "group_overlap",
+    "test_selection"
+   ],
+   "found": [
+    "group_overlap",
+    "test_selection"
+   ],
+   "flagged_decoy": false,
+   "decoy_used": true,
+   "fidelity": true,
+   "repair_verified": true,
+   "reported": 0.7133241521776554,
+   "verified": 0.7071196627994228,
+   "ci": [
+    0.6841796619394654,
+    0.7291071204152876
+   ],
+   "truth": 0.7347478172788336,
+   "verdict": "Supported",
+   "gt_verdict": "Supported",
+   "seconds": 6.3,
+   "confirmed_verdict": null
+  },
+  {
+   "id": "S08",
+   "model": "lr",
+   "planted": [],
+   "found": [],
+   "flagged_decoy": false,
+   "decoy_used": false,
+   "fidelity": true,
+   "repair_verified": null,
+   "reported": 0.7102720114531138,
+   "verified": 0.7200909617612582,
+   "ci": [
+    0.6398865354456028,
+    0.7888891891374997
+   ],
+   "truth": 0.7312915574211097,
+   "verdict": "Supported",
+   "gt_verdict": "Supported",
+   "seconds": 2.7,
+   "confirmed_verdict": null
+  },
+  {
+   "id": "S09",
+   "model": "lr",
+   "planted": [
+    "future_features",
+    "group_overlap",
+    "preprocessing",
+    "test_selection"
+   ],
+   "found": [
+    "future_features",
+    "group_overlap",
+    "preprocessing",
+    "test_selection"
+   ],
+   "flagged_decoy": false,
+   "decoy_used": false,
+   "fidelity": true,
+   "repair_verified": true,
+   "reported": 0.9358381502890173,
+   "verified": 0.7097648539726197,
+   "ci": [
+    0.5078080773737138,
+    0.8550509115213425
+   ],
+   "truth": 0.7333969607072485,
+   "verdict": "Depends on review",
+   "gt_verdict": "Overstated",
+   "seconds": 7.3,
+   "confirmed_verdict": "Overstated"
+  },
+  {
+   "id": "S10",
+   "model": "lr",
+   "planted": [
+    "future_features",
+    "group_overlap",
+    "test_selection"
+   ],
+   "found": [
+    "future_features",
+    "group_overlap",
+    "test_selection"
+   ],
+   "flagged_decoy": false,
+   "decoy_used": true,
+   "fidelity": true,
+   "repair_verified": true,
+   "reported": 0.8612044629654524,
+   "verified": 0.7317349202403456,
+   "ci": [
+    0.5781820975755335,
+    0.8460600501163151
+   ],
+   "truth": 0.7293861296789858,
+   "verdict": "Depends on review",
+   "gt_verdict": "Overstated",
+   "seconds": 7.1,
+   "confirmed_verdict": "Overstated"
+  },
+  {
+   "id": "S11",
+   "model": "lr",
+   "planted": [
+    "duplicates",
+    "future_features",
+    "group_overlap",
+    "preprocessing",
+    "test_selection"
+   ],
+   "found": [
+    "duplicates",
+    "future_features",
+    "group_overlap",
+    "preprocessing",
+    "test_selection"
+   ],
+   "flagged_decoy": false,
+   "decoy_used": false,
+   "fidelity": true,
+   "repair_verified": true,
+   "reported": 0.9475028832537701,
+   "verified": 0.7498491335381233,
+   "ci": [
+    0.6408650773727101,
+    0.8353165638278851
+   ],
+   "truth": 0.7400849825882587,
+   "verdict": "Depends on review",
+   "gt_verdict": "Overstated",
+   "seconds": 10.7,
+   "confirmed_verdict": "Overstated"
+  },
+  {
+   "id": "S12",
+   "model": "rf",
+   "planted": [],
+   "found": [],
+   "flagged_decoy": false,
+   "decoy_used": true,
+   "fidelity": true,
+   "repair_verified": null,
+   "reported": 0.7257852077001014,
+   "verified": 0.7438023036909032,
+   "ci": [
+    0.6396251982198778,
+    0.8269896802948034
+   ],
+   "truth": 0.7115289268339776,
+   "verdict": "Supported",
+   "gt_verdict": "Supported",
+   "seconds": 3.5,
+   "confirmed_verdict": null
+  },
+  {
+   "id": "S13",
+   "model": "lr",
+   "planted": [
+    "duplicates",
+    "future_features",
+    "group_overlap",
+    "test_selection"
+   ],
+   "found": [
+    "duplicates",
+    "future_features",
+    "group_overlap",
+    "test_selection"
+   ],
+   "flagged_decoy": false,
+   "decoy_used": false,
+   "fidelity": true,
+   "repair_verified": true,
+   "reported": 0.8686889250814331,
+   "verified": 0.7163313692600521,
+   "ci": [
+    0.6158048426500091,
+    0.7999404956770805
+   ],
+   "truth": 0.7376296737852357,
+   "verdict": "Depends on review",
+   "gt_verdict": "Overstated",
+   "seconds": 8.5,
+   "confirmed_verdict": "Overstated"
+  },
+  {
+   "id": "S14",
+   "model": "rf",
+   "planted": [
+    "duplicates",
+    "group_overlap",
+    "preprocessing"
+   ],
+   "found": [
+    "duplicates",
+    "group_overlap",
+    "preprocessing"
+   ],
+   "flagged_decoy": false,
+   "decoy_used": true,
+   "fidelity": true,
+   "repair_verified": true,
+   "reported": 0.7598204264870931,
+   "verified": 0.7373533067690475,
+   "ci": [
+    0.5452552919280622,
+    0.8701629281378259
+   ],
+   "truth": 0.7258916758466514,
+   "verdict": "Supported",
+   "gt_verdict": "Overstated",
+   "seconds": 9.7,
+   "confirmed_verdict": null
+  },
+  {
+   "id": "S15",
+   "model": "rf",
+   "planted": [
+    "duplicates",
+    "future_features",
+    "group_overlap",
+    "preprocessing",
+    "test_selection"
+   ],
+   "found": [
+    "duplicates",
+    "future_features",
+    "group_overlap",
+    "preprocessing",
+    "test_selection"
+   ],
+   "flagged_decoy": false,
+   "decoy_used": false,
+   "fidelity": true,
+   "repair_verified": true,
+   "reported": 0.953666960611405,
+   "verified": 0.7468932825360324,
+   "ci": [
+    0.5729439280367377,
+    0.8684305234601702
+   ],
+   "truth": 0.7189114236669779,
+   "verdict": "Depends on review",
+   "gt_verdict": "Overstated",
+   "seconds": 37.9,
+   "confirmed_verdict": "Overstated"
+  },
+  {
+   "id": "S16",
+   "model": "rf",
+   "planted": [],
+   "found": [],
+   "flagged_decoy": false,
+   "decoy_used": false,
+   "fidelity": true,
+   "repair_verified": null,
+   "reported": 0.6739565217391306,
+   "verified": 0.6875509501431357,
+   "ci": [
+    0.6336803576671949,
+    0.737019700562181
+   ],
+   "truth": 0.7175334146004081,
+   "verdict": "Supported",
+   "gt_verdict": "Supported",
+   "seconds": 3.3,
+   "confirmed_verdict": null
+  },
+  {
+   "id": "S17",
+   "model": "lr",
+   "planted": [
+    "duplicates",
+    "future_features",
+    "group_overlap"
+   ],
+   "found": [
+    "duplicates",
+    "future_features",
+    "group_overlap"
+   ],
+   "flagged_decoy": false,
+   "decoy_used": false,
+   "fidelity": true,
+   "repair_verified": true,
+   "reported": 0.9153202921033713,
+   "verified": 0.7400034416208773,
+   "ci": [
+    0.6854680029761536,
+    0.7883072351140141
+   ],
+   "truth": 0.7377119564762502,
+   "verdict": "Depends on review",
+   "gt_verdict": "Overstated",
+   "seconds": 5.7,
+   "confirmed_verdict": "Overstated"
+  },
+  {
+   "id": "S18",
+   "model": "rf",
+   "planted": [
+    "duplicates",
+    "group_overlap",
+    "preprocessing"
+   ],
+   "found": [
+    "duplicates",
+    "group_overlap",
+    "preprocessing"
+   ],
+   "flagged_decoy": false,
+   "decoy_used": true,
+   "fidelity": true,
+   "repair_verified": true,
+   "reported": 0.7662000337325012,
+   "verified": 0.7642622181546149,
+   "ci": [
+    0.7017251399956449,
+    0.8175347558195585
+   ],
+   "truth": 0.7209950393970993,
+   "verdict": "Supported",
+   "gt_verdict": "Overstated",
+   "seconds": 8.5,
+   "confirmed_verdict": null
+  },
+  {
+   "id": "S19",
+   "model": "lr",
+   "planted": [
+    "duplicates",
+    "future_features",
+    "group_overlap",
+    "preprocessing"
+   ],
+   "found": [
+    "duplicates",
+    "future_features",
+    "group_overlap",
+    "preprocessing"
+   ],
+   "flagged_decoy": false,
+   "decoy_used": true,
+   "fidelity": true,
+   "repair_verified": true,
+   "reported": 0.9769896004378763,
+   "verified": 0.7367695561750741,
+   "ci": [
+    0.6170746039625934,
+    0.8305356820437669
+   ],
+   "truth": 0.7402801796510952,
+   "verdict": "Depends on review",
+   "gt_verdict": "Overstated",
+   "seconds": 6.1,
+   "confirmed_verdict": "Overstated"
+  },
+  {
+   "id": "S20",
+   "model": "lr",
+   "planted": [],
+   "found": [],
+   "flagged_decoy": false,
+   "decoy_used": false,
+   "fidelity": true,
+   "repair_verified": null,
+   "reported": 0.7078590363324497,
+   "verified": 0.7239786027542573,
+   "ci": [
+    0.6304851488961286,
+    0.8019784865503302
+   ],
+   "truth": 0.7356548307609971,
+   "verdict": "Supported",
+   "gt_verdict": "Supported",
+   "seconds": 2.8,
+   "confirmed_verdict": null
+  },
+  {
+   "id": "S21",
+   "model": "rf",
+   "planted": [
+    "duplicates",
+    "group_overlap",
+    "test_selection"
+   ],
+   "found": [
+    "duplicates",
+    "group_overlap",
+    "test_selection"
+   ],
+   "flagged_decoy": false,
+   "decoy_used": true,
+   "fidelity": true,
+   "repair_verified": true,
+   "reported": 0.7526491814821333,
+   "verified": 0.7522842472259251,
+   "ci": [
+    0.7017989029467344,
+    0.7969904621657944
+   ],
+   "truth": 0.7189670142004427,
+   "verdict": "Supported",
+   "gt_verdict": "Overstated",
+   "seconds": 14.6,
+   "confirmed_verdict": null
+  },
+  {
+   "id": "S22",
+   "model": "rf",
+   "planted": [
+    "future_features",
+    "preprocessing",
+    "test_selection"
+   ],
+   "found": [
+    "future_features",
+    "preprocessing",
+    "test_selection"
+   ],
+   "flagged_decoy": false,
+   "decoy_used": true,
+   "fidelity": true,
+   "repair_verified": true,
+   "reported": 0.8576238317127698,
+   "verified": 0.7304097962264366,
+   "ci": [
+    0.5629087000476888,
+    0.8525339046621931
+   ],
+   "truth": 0.7064253177860872,
+   "verdict": "Depends on review",
+   "gt_verdict": "Overstated",
+   "seconds": 14.5,
+   "confirmed_verdict": "Overstated"
+  },
+  {
+   "id": "S23",
+   "model": "lr",
+   "planted": [
+    "duplicates",
+    "group_overlap"
+   ],
+   "found": [
+    "duplicates",
+    "group_overlap"
+   ],
+   "flagged_decoy": false,
+   "decoy_used": false,
+   "fidelity": true,
+   "repair_verified": true,
+   "reported": 0.7469387755102039,
+   "verified": 0.7486786380024961,
+   "ci": [
+    0.5330860860192924,
+    0.888494904248021
+   ],
+   "truth": 0.7300062106132069,
+   "verdict": "Supported",
+   "gt_verdict": "Supported",
+   "seconds": 5.6,
+   "confirmed_verdict": null
+  }
+ ]
+}

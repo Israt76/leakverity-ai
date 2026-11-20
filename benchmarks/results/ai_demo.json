@@ -1,0 +1,15 @@
+[
+ {
+  "reader": "rules",
+  "model": null,
+  "identified": false,
+  "review_only": false,
+  "if_confirmed": null,
+  "reason": null,
+  "measured": null,
+  "verdict": "Supported",
+  "verified": 0.9244893000789909,
+  "explanations": "not run",
+  "claim_source": "notebook text"
+ }
+]

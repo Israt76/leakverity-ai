@@ -1,0 +1,12 @@
+# Pinned to the versions LeakVerity was developed and benchmarked with (Python 3.13).
+fastapi==0.164.0
+uvicorn==0.54.0
+python-multipart==0.0.32
+pandas==3.0.5
+numpy==2.5.3
+scipy==1.18.1
+scikit-learn==1.9.1
+imbalanced-learn==0.14.2
+# optional: AI reader
+anthropic==2.10.0
+openai==3.55.1

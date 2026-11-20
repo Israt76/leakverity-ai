@@ -1,0 +1,14 @@
+# LeakVerity AI — web app (Hugging Face Spaces / Render / any container host)
+FROM python:3.13-slim
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 OMP_NUM_THREADS=2 \
+    LEAKVERITY_ALLOW_UPLOADS=0
+# Public image: uploads off by default (demos still run live). To accept uploads, set
+# LEAKVERITY_ALLOW_UPLOADS=1 together with LEAKVERITY_SANDBOX=docker (docs/security.md).
+RUN useradd -m -u 1000 app
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY --chown=app . .
+USER app
+EXPOSE 7860
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-7860}"]

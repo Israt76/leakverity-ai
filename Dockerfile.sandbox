@@ -1,0 +1,11 @@
+# Disposable sandbox image: runs ONE experiment under the LeakVerity tracer and exits.
+# Used when LEAKVERITY_SANDBOX=docker. The web server starts one container per run with
+# --network none, --read-only, memory/CPU/pid limits, and only the job directory mounted.
+FROM python:3.13-slim
+ENV PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=2 MPLBACKEND=Agg
+RUN pip install --no-cache-dir pandas==3.0.5 numpy==2.5.3 scipy==1.18.1 scikit-learn==1.9.1 imbalanced-learn==0.14.2 \
+    && useradd -m -u 1000 runner
+COPY leakverity/tracer.py /opt/leakverity/tracer.py
+USER runner
+WORKDIR /job
+ENTRYPOINT ["python", "-I", "/opt/leakverity/tracer.py"]
