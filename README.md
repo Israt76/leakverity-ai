@@ -6,7 +6,6 @@ LeakVerity checks whether a machine-learning result survives once data leakage i
 
 > The AI investigates and explains. Re-executed code produces every number. Pre-registered rules decide the verdict. A person confirms what only a person can know.
 
-Built for the STEM2Connect AI Hackathon 2026 (Scientific Research track).
 
 ![Investigation screen](docs/screenshots/investigation.png)
 
@@ -101,9 +100,6 @@ Supported: pandas + scikit-learn notebooks or scripts (imbalanced-learn, XGBoost
 
 Leakage detection and quick fixes already exist: Yang et al. (ASE 2022); NBLyzer (Subotić et al., 2022); LeakageDetector 2.0 (ICSME 2025); LeakLens. Impact varies hugely by leak type (Roth, 2026, *Which Leakage Types Matter?*). LeakVerity's contribution is the claim-centred verification workflow: runtime evidence, a fidelity gate, measured repair-category effects with interactions, repairs verified by execution, and pre-registered verdicts. See [`docs/prior_art.md`](docs/prior_art.md).
 
-## AI usage
-
-The product uses an LLM (Claude by default, OpenAI optional) to judge which features exist at prediction time, to read the claim, and to explain findings. It is guarded so it cannot invent columns or numbers. Development used AI coding assistance, disclosed in [`docs/ai_usage.md`](docs/ai_usage.md).
 
 ## Project structure
 
@@ -113,7 +109,7 @@ app/               FastAPI server and the web interface (app/static)
 examples/          demo dataset, leaky and clean notebooks, saved audits
 benchmarks/        ground-truth benchmark and results
 tests/             pytest suite
-docs/              methodology, limitations, prior art, security, AI usage, deploy, demo script
+docs/              methodology, limitations, prior art, security, deploy, demo script
 ```
 
 **Data.** The demo study and generated benchmark are synthetic and non-identifiable. The independent evaluation also uses two real public datasets bundled with scikit-learn: Breast Cancer Wisconsin (Diagnostic) and Wine, both from the UCI Machine Learning Repository. No real patient records are used.

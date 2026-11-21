@@ -12,7 +12,7 @@ Each audit gets an unguessable 128-bit job id. Whoever holds the id can read the
 
 ## Public demo
 
-`LEAKVERITY_ALLOW_UPLOADS=0`: the upload form is disabled and `/api/audit` returns 403. Visitors can open the saved audits and run both demo notebooks live, but no visitor-supplied code ever executes. Use this for Demo Day and any public link.
+`LEAKVERITY_ALLOW_UPLOADS=0`: the upload form is disabled and `/api/audit` returns 403. Visitors can open the saved audits and run both demo notebooks live, but no visitor-supplied code ever executes. Use this for public demonstrations and links.
 
 ## Process sandbox (`LEAKVERITY_SANDBOX=process`, the default for local use)
 

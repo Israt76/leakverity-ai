@@ -1,6 +1,6 @@
 # Deploying
 
-## Hugging Face Spaces (free, recommended for Demo Day)
+## Hugging Face Spaces (Docker deployment)
 
 1. Create a new Space, choose **Docker** as the SDK and **CPU basic** hardware.
 2. Push this repository to the Space. Add this front matter to the top of the Space's `README.md`:
