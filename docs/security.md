@@ -21,7 +21,7 @@ Each experiment runs as a separate `python -I` process with:
 - a fresh temporary working directory, deleted afterwards;
 - network sockets disabled inside the interpreter;
 - `RLIMIT_CPU`, `RLIMIT_AS` (6 GB) and `RLIMIT_FSIZE` (512 MB) limits, plus a wall-clock timeout (300 s);
-- a minimal environment, so API keys and other secrets are not passed through (tested);
+- a minimal environment, so private values and other secrets are not passed through (tested);
 - one audit at a time (`LEAKVERITY_CONCURRENCY=1`).
 
 This prevents accidents and casual abuse. It is **not** a hard security boundary against a determined attacker. Use it for your own notebooks.
@@ -39,6 +39,6 @@ The container runs with `--network none --read-only --cap-drop ALL --security-op
 
 > Status: this mode is implemented in `leakverity/sandbox.py` but was **not** exercised in the development environment, which had no Docker daemon. Run the test suite with `LEAKVERITY_SANDBOX=docker` on a Docker host before relying on it. The server needs access to the Docker socket, so run the server itself on a dedicated host.
 
-## Data and AI
+## Data and privacy
 
-Datasets are never sent to an external AI provider. The AI reader receives column names, a few example values and univariate AUCs, plus the notebook's markdown text for claim reading. Leave the API key empty to keep everything local.
+Feature screening and claim extraction run locally using rule-based checks. The application does not require external analysis service credentials. Audits execute submitted code, so only use trusted notebooks or the documented container sandbox.

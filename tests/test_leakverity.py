@@ -85,9 +85,9 @@ def test_sandbox_blocks_network_and_times_out():
 
 
 def test_sandbox_does_not_leak_secrets(monkeypatch):
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-secret")
-    r = run_code("import os\nprint(os.environ.get('ANTHROPIC_API_KEY'))\n", {})
-    assert "sk-ant-secret" not in r.stdout
+    monkeypatch.setenv("LEAKVERITY_PRIVATE_TEST_TOKEN", "private-test-token")
+    r = run_code("import os\nprint(os.environ.get('LEAKVERITY_PRIVATE_TEST_TOKEN'))\n", {})
+    assert "private-test-token" not in r.stdout
 
 
 # ------------------------------------------------------------------ replay
@@ -118,7 +118,7 @@ def test_fidelity_failure_abstains(data):
 def test_end_to_end_leaky_is_overstated_and_repair_verified(data):
     _, csv = data
     res = audit("study.py", script(True).encode(), "study.csv", csv,
-                Options(n_seeds=2, use_ai=False, run_survival=False, group_col="patient_id"))
+                Options(n_seeds=2, run_survival=False, group_col="patient_id"))
     fixes = {f["fix"] for f in res["findings"]}
     # the follow-up feature is a semantic suspicion: proposed, evaluated both ways
     assert {"preprocessing", "proposed_features", "test_selection", "duplicates", "group_overlap"} <= fixes
@@ -132,7 +132,7 @@ def test_end_to_end_leaky_is_overstated_and_repair_verified(data):
 def test_end_to_end_clean_has_no_false_alarm(data):
     _, csv = data
     res = audit("study.py", script(False).encode(), "study.csv", csv,
-                Options(n_seeds=2, use_ai=False, run_survival=False))
+                Options(n_seeds=2, run_survival=False))
     assert res["findings"] == []
     assert res["verdict"]["verdict"] == "Supported"
 
@@ -144,46 +144,19 @@ def test_unsupported_protocol_abstains(data):
             'df = pd.read_csv("study.csv"); X = df[["age", "hba1c"]]; y = df["readmitted_30d"]\n'
             "for tr, te in KFold(5).split(X):\n"
             "    m = LogisticRegression().fit(X.iloc[tr], y.iloc[tr]); print(roc_auc_score(y.iloc[te], m.predict_proba(X.iloc[te])[:, 1]))\n")
-    res = audit("cv.py", code.encode(), "study.csv", csv, Options(n_seeds=2, use_ai=False))
+    res = audit("cv.py", code.encode(), "study.csv", csv, Options(n_seeds=2))
     assert res["verdict"]["verdict"] == "Insufficient evidence"
     assert "fold" in res["verdict"]["reason"].lower() or "cross" in res["verdict"]["reason"].lower()
 
-
-# ------------------------------------------------------------------ AI layer guards
-
-class FakeLLM:
-    provider, model = "fake", "fake-model"
-
-    def __init__(self, payload):
-        self.payload = payload
-
-    def json(self, system, user, max_tokens=3000):
-        return self.payload
-
-
-def test_ai_feature_audit_rejects_invented_columns(data):
-    df, _ = data
-    llm = FakeLLM({"flags": [{"column": "followup_ed_visits_30d", "reason": "after discharge", "confidence": "high"},
-                             {"column": "made_up_column", "reason": "x"}], "prediction_point": "discharge"})
-    out = semantic.audit_features(df[FEATS + ["followup_ed_visits_30d"]], df["readmitted_30d"], "readmitted_30d", None, llm)
-    assert [f["column"] for f in out["flags"]] == ["followup_ed_visits_30d"]
-    assert out["source"] == "ai"
 
 
 def test_rules_flag_future_feature_but_not_decoy(data):
     df, _ = data
     d = df[FEATS + ["followup_ed_visits_30d"]].assign(discharge_hour=np.random.default_rng(0).integers(8, 20, len(df)))
-    out = semantic.audit_features(d, df["readmitted_30d"], "readmitted_30d", None, None)
+    out = semantic.audit_features(d, df["readmitted_30d"], "readmitted_30d", None)
     cols = [f["column"] for f in out["flags"]]
     assert "followup_ed_visits_30d" in cols and "discharge_hour" not in cols
 
-
-def test_explanation_number_guard():
-    f = [{"title": "t", "evidence": ["AUC 0.210"], "explanation": "orig", "impact_text": "drop 0.210"}]
-    semantic.explain(f, FakeLLM({"items": [{"id": 0, "text": "It inflated the AUC by 0.35."}]}))
-    assert f[0]["explanation"] == "orig"
-    semantic.explain(f, FakeLLM({"items": [{"id": 0, "text": "Fixing it lowers AUC by 0.210."}]}))
-    assert f[0]["explanation_source"] == "ai"
 
 
 def test_claim_extraction():
@@ -286,7 +259,7 @@ def test_smote_before_split_detected_and_repaired():
             "Xr, yr = SMOTE(random_state=0).fit_resample(X, y)\n"
             "a, b, c, e = train_test_split(Xr, yr, test_size=0.3, random_state=1)\n"
             "print(roc_auc_score(e, LogisticRegression(max_iter=500).fit(a, c).predict_proba(b)[:, 1]))\n")
-    res = audit("s.py", code.encode(), "t.csv", d.to_csv(index=False).encode(), Options(n_seeds=2, use_ai=False, run_survival=False))
+    res = audit("s.py", code.encode(), "t.csv", d.to_csv(index=False).encode(), Options(n_seeds=2, run_survival=False))
     assert {f["fix"] for f in res["findings"] if f.get("fix")} == {"resampling"}
     assert res["replay"]["fidelity_ok"] and res["repair"]["verification"]["verified"]
 
@@ -300,7 +273,7 @@ def test_feature_selection_on_noise_is_contradicted():
             "Xs = SelectKBest(f_classif, k=15).fit_transform(X, y)\n"
             "a, b, c, e = train_test_split(Xs, y, test_size=0.3, random_state=4)\n"
             "print(roc_auc_score(e, LogisticRegression(max_iter=500).fit(a, c).predict_proba(b)[:, 1]))\n")
-    res = audit("g.py", code.encode(), "g.csv", d.to_csv(index=False).encode(), Options(n_seeds=3, use_ai=False, run_survival=False))
+    res = audit("g.py", code.encode(), "g.csv", d.to_csv(index=False).encode(), Options(n_seeds=3, run_survival=False))
     assert res["replay"]["fidelity_ok"]
     assert res["verdict"]["verdict"] == "Contradicted"
     assert res["repair"]["verification"]["verified"]
@@ -314,7 +287,7 @@ def test_tuple_parameters_replay_faithfully():
             "Xs = MinMaxScaler(feature_range=(0, 2)).fit_transform(X)\n"
             "a, t, c, e = train_test_split(Xs, y, random_state=0)\n"
             "print(roc_auc_score(e, LogisticRegression(max_iter=3000).fit(a, c).predict_proba(t)[:, 1]))\n")
-    res = audit("b.py", code.encode(), "b.csv", csv, Options(n_seeds=2, use_ai=False, run_survival=False))
+    res = audit("b.py", code.encode(), "b.csv", csv, Options(n_seeds=2, run_survival=False))
     assert res["replay"]["fidelity_ok"] and res["repair"]["verification"]["verified"]
 
 
@@ -326,27 +299,14 @@ def test_gridsearch_object_abstains_instead_of_guessing():
             "a, t, c, e = train_test_split(X, y, random_state=0)\n"
             "g = GridSearchCV(LogisticRegression(max_iter=3000), {'C': [0.1, 1]}, cv=3).fit(a, c)\n"
             "print(roc_auc_score(e, g.predict_proba(t)[:, 1]))\n")
-    res = audit("b.py", code.encode(), "b.csv", csv, Options(n_seeds=2, use_ai=False, run_survival=False))
+    res = audit("b.py", code.encode(), "b.csv", csv, Options(n_seeds=2, run_survival=False))
     assert res["verdict"]["verdict"] == "Insufficient evidence"
 
 
 def test_strong_genuine_features_are_sent_to_review_not_removed():
     b, _ = _bc()
-    out = semantic.audit_features(b.drop(columns="target"), b["target"], "target", None, None)
+    out = semantic.audit_features(b.drop(columns="target"), b["target"], "target", None)
     assert out["flags"] and all(f["needs_review"] for f in out["flags"])
-
-
-def test_ai_claim_reader_rejects_invented_sentences_and_values():
-    text = "## Result\nOur model reaches a test AUC of 0.94 for all adult patients."
-    ok = FakeLLM({"sentence": "Our model reaches a test AUC of 0.94 for all adult patients.", "metric": "roc_auc_score",
-                  "value": "0.94", "general": True})
-    c = semantic.extract_claim(text, "roc_auc_score", 0.939, ok)
-    assert c["source"].startswith("AI") and c["value"] == 0.94 and c["general"]
-    invented = FakeLLM({"sentence": "The model is excellent with AUC 0.99.", "metric": "roc_auc_score", "value": "0.99"})
-    c = semantic.extract_claim(text, "roc_auc_score", 0.939, invented)
-    assert c["source"] == "notebook text" and c["value"] == 0.94      # fell back to the guarded regex reader
-    wrong_value = FakeLLM({"sentence": "Our model reaches a test AUC of 0.94 for all adult patients.", "metric": "roc_auc_score", "value": "0.97"})
-    assert semantic.extract_claim(text, "roc_auc_score", 0.939, wrong_value)["value"] == 0.94
 
 
 def test_public_mode_refuses_uploads_but_serves_demos(monkeypatch):
@@ -379,34 +339,10 @@ def test_failed_repair_verification_makes_the_verdict_provisional(data, monkeypa
     _, csv = data
     monkeypatch.setattr(repair, "parse_result", lambda stdout: -1.0)        # force a verification mismatch
     res = audit("study.py", script(True).encode(), "study.csv", csv,
-                Options(n_seeds=2, use_ai=False, run_survival=False, group_col="patient_id"))
+                Options(n_seeds=2, run_survival=False, group_col="patient_id"))
     assert res["repair"]["verification"]["verified"] is False
     assert res["verdict"]["provisional"] and "PROVISIONAL" in res["verdict"]["reason"]
 
-
-def test_ai_path_end_to_end_with_a_cryptic_feature(data, monkeypatch):
-    """The AI flag (here a stand-in model) must drive the fix, and the replay must measure its effect independently."""
-    df, _ = data
-    d = df.rename(columns={"followup_ed_visits_30d": "ed_ct_30"})
-    code = script(True).replace("followup_ed_visits_30d", "ed_ct_30")
-
-    class Reader(FakeLLM):
-        def json(self, system, user, max_tokens=3000):
-            if "domain-reasoning" in system:
-                return {"flags": [{"column": "ed_ct_30", "reason": "ER visits counted in the 30 days after discharge.",
-                                   "confidence": "high"}], "prediction_point": "discharge"}
-            if "explain verified findings" in system:
-                return {"items": []}
-            return {"sentence": None}
-    monkeypatch.setattr(semantic, "get_llm", lambda *a, **k: Reader({}))
-    res = audit("s.py", code.encode(), "study.csv", d.to_csv(index=False).encode(),
-                Options(n_seeds=2, run_survival=False, group_col="patient_id"))
-    assert res["ai"]["enabled"]
-    flag = [f for f in res["findings"] if f.get("column") == "ed_ct_30"][0]
-    # an AI judgement is a proposal, never an automatic removal; its effect is measured both ways
-    assert flag["fix"] == "proposed_features" and flag["source"] == "AI semantic audit"
-    assert res["replay"]["attribution"]["proposed_features"]["mean"] > 0.05
-    assert "scenarios" in res["verdict"]
 
 
 def test_wide_interval_touching_chance_is_not_contradicted():
@@ -440,7 +376,7 @@ def test_lookahead_without_time_order_is_a_proposal_not_a_removal():
             "X, y = d[['a', 'b', 'c', 'a_smooth']], d['label']\n"
             "p, q, r, s = train_test_split(X, y, random_state=0)\n"
             "print(roc_auc_score(s, LogisticRegression().fit(p, r).predict_proba(q)[:, 1]))\n")
-    res = audit("t.py", code.encode(), "t.csv", d.to_csv(index=False).encode(), Options(n_seeds=2, use_ai=False, run_survival=False))
+    res = audit("t.py", code.encode(), "t.csv", d.to_csv(index=False).encode(), Options(n_seeds=2, run_survival=False))
     f = [x for x in res["findings"] if x.get("column") == "a_smooth"][0]
     # no time order: a proposal, evaluated both ways, never removed outright
     assert f["proposed"] and f["fix"] == "proposed_features" and f["rule"] == "LV-LOOKAHEAD-REVIEW"
@@ -448,7 +384,7 @@ def test_lookahead_without_time_order_is_a_proposal_not_a_removal():
     assert "scenarios" in res["verdict"]
     # with a sorted date column the same pattern is fixed automatically
     d2 = d.assign(day=pd.date_range("2024-01-01", periods=len(d)).astype(str))
-    res2 = audit("t.py", code.encode(), "t.csv", d2.to_csv(index=False).encode(), Options(n_seeds=2, use_ai=False, run_survival=False))
+    res2 = audit("t.py", code.encode(), "t.csv", d2.to_csv(index=False).encode(), Options(n_seeds=2, run_survival=False))
     f2 = [x for x in res2["findings"] if x.get("column") == "a_smooth"][0]
     assert f2["fix"] == "future_features" and not f2.get("proposed")
     assert "scenarios" not in res2["verdict"]
@@ -464,7 +400,7 @@ def test_claim_about_a_metric_the_notebook_does_not_verify_abstains():
             "d = pd.read_csv('b.csv'); X, y = d.drop(columns='target'), d['target']\n"
             "a, t, c, e = train_test_split(X, y, random_state=0)\n"
             "print(roc_auc_score(e, LogisticRegression(max_iter=3000).fit(a, c).predict_proba(t)[:, 1]))\n")
-    res = audit("b.py", code.encode(), "b.csv", csv, Options(n_seeds=2, use_ai=False, run_survival=False))
+    res = audit("b.py", code.encode(), "b.csv", csv, Options(n_seeds=2, run_survival=False))
     assert res["verdict"]["verdict"] == "Insufficient evidence"
     assert "accuracy" in res["verdict"]["reason"]
 
@@ -477,7 +413,7 @@ def test_claimed_metric_is_the_verified_metric_when_both_are_computed():
             "d = pd.read_csv('b.csv'); X, y = d.drop(columns='target'), d['target']\n"
             "a, t, c, e = train_test_split(X, y, random_state=0)\nm = LogisticRegression(max_iter=3000).fit(a, c)\n"
             "print(roc_auc_score(e, m.predict_proba(t)[:, 1]), accuracy_score(e, m.predict(t)))\n")
-    res = audit("b.py", code.encode(), "b.csv", csv, Options(n_seeds=2, use_ai=False, run_survival=False))
+    res = audit("b.py", code.encode(), "b.csv", csv, Options(n_seeds=2, run_survival=False))
     assert res["protocol"]["metric"] == "accuracy_score"
 
 
@@ -504,7 +440,7 @@ def test_proposed_leaks_give_both_scenarios():
 def test_user_confirmation_turns_a_proposal_into_a_definite_fix(data):
     _, csv = data
     res = audit("study.py", script(True).encode(), "study.csv", csv,
-                Options(n_seeds=2, use_ai=False, run_survival=False, group_col="patient_id", known_leaks=["followup_ed_visits_30d"]))
+                Options(n_seeds=2, run_survival=False, group_col="patient_id", known_leaks=["followup_ed_visits_30d"]))
     f = [x for x in res["findings"] if x.get("column") == "followup_ed_visits_30d"][0]
     assert f["fix"] == "future_features" and "scenarios" not in res["verdict"]
     assert res["verdict"]["verdict"] == "Overstated"
@@ -516,7 +452,7 @@ def test_uploads_are_off_by_default_and_job_ids_are_unguessable(monkeypatch):
     import app.main as M
     M = importlib.reload(M)
     assert M.ALLOW_UPLOADS is False
-    jid = M._start("x.py", b"print(1)", "d.csv", b"a\n1\n", Options(use_ai=False))
+    jid = M._start("x.py", b"print(1)", "d.csv", b"a\n1\n", Options())
     assert len(jid) >= 20
     M.JOBS[jid]["created"] -= 10 * 3600
     M._purge()
@@ -535,7 +471,7 @@ def test_legitimate_scenario_runs_its_own_survival_tests(data, monkeypatch):
     monkeypatch.setattr(S, "run_all", spy)
     _, csv = data
     res = audit("study.py", script(True).encode(), "study.csv", csv,
-                Options(n_seeds=2, use_ai=False, group_col="patient_id"))
+                Options(n_seeds=2, group_col="patient_id"))
     assert len(seen) == 2
     assert "proposed_features" in seen[0] and "proposed_features" not in seen[1]
     assert "survival_if_legitimate" in res

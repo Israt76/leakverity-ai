@@ -1,6 +1,6 @@
 # Methodology
 
-LeakVerity answers one question about a machine-learning result: **does the reported number survive once the experiment is run without leakage?** Every number it reports comes from re-executed code. The AI layer only reads and explains.
+LeakVerity answers one question about a machine-learning result: **does the reported number survive once the experiment is run without leakage?** Every number it reports comes from re-executed code. Rule-based checks propose features for review.
 
 ## 1. Reproduce (execution trace)
 
@@ -28,13 +28,13 @@ From the trace, LeakVerity rebuilds the experiment at the scikit-learn level: st
 | LV-DUPLICATES | test rows that are the *same source record* as a training row: every column identical, IDs included. Different people with identical features are not duplicates. | drop records exported more than once (keep the first) |
 | LV-GROUP-OVERLAP | the same person or entity on both sides of a random split | group-aware split |
 | LV-FUTURE-FEATURE | a feature the **user confirmed** is not available at prediction time (`known_leaks`, or the *Confirm* button) | drop the feature |
-| LV-PROPOSED-LEAK | a feature the AI or rule-based reader *suspects* is unavailable at prediction time (post-outcome name, cryptic code read as post-outcome, near-perfect univariate AUC) | **proposed**: evaluated both with and without the feature (see §7) |
+| LV-PROPOSED-LEAK | a feature rule-based checks *suspect* is unavailable at prediction time (post-outcome name, near-perfect univariate AUC) | **proposed**: evaluated both with and without the feature (see §7) |
 | LV-LOOKAHEAD | static code analysis: a model feature assigned from a centred rolling window, a negative `shift`, backward fill, or `groupby(...)[target].transform` (built in pandas before the split), **with** verifiable evidence: time order (a date column the rows are sorted by, or explicit sorting), or target encoding, which leaks whatever the order | drop the feature (conservative; measured by replay) |
 | LV-LOOKAHEAD-REVIEW | the same patterns without time-order evidence. The finding reports cross-partition mixing (how many training rows' windows include test rows) | **proposed**: evaluated both ways |
 | LV-NOTE-STRONG-FEATURE | a feature that is only strong (high univariate AUC) with nothing else suspicious | none: a note, never affects the verdict |
 | LV-TEST-SELECTION | several candidates compared on the test set | average over seeds, or choose hyper-parameters by 3-fold CV on training data |
 
-A semantic flag is a **hypothesis**. Its effect is measured, never assumed. But measurement cannot tell a leak from a legitimately strong predictor, because removing either lowers the score. So **no AI or rule-based suspicion removes a feature by itself.** A suspected feature becomes a *proposed* fix: the replay runs every combination with and without it, and the verdict is computed for both scenarios. Only the user (or verifiable code evidence such as time order) turns a proposal into a definite removal. Users can confirm features either way (`known_leaks` / `not_leaks`, or the buttons on each proposed finding, which re-run the audit).
+A semantic flag is a **hypothesis**. Its effect is measured, never assumed. But measurement cannot tell a leak from a legitimately strong predictor, because removing either lowers the score. So **no feature-name suspicion removes a feature by itself.** A suspected feature becomes a *proposed* fix: the replay runs every combination with and without it, and the verdict is computed for both scenarios. Only the user (or verifiable code evidence such as time order) turns a proposal into a definite removal. Users can confirm features either way (`known_leaks` / `not_leaks`, or the buttons on each proposed finding, which re-run the audit).
 
 ## 4. Verified counterfactual replay
 
@@ -97,12 +97,8 @@ When there are proposed leaks, the survival tests are run **twice**: once on the
 
 *Revision history.* The Contradicted rule was tightened after an external technical review. Earlier versions called a claim contradicted whenever the corrected CI included chance, which confuses "not demonstrated" with "contradicted". Every benchmark in this repository was re-run with the final rules.
 
-## 8. The AI layer and its guards
+## 8. Feature screening and review
 
-| AI task | Guard |
-|---|---|
-| Suggest which features are unavailable at prediction time | must name existing columns; suggestions are only *proposed* leaks, evaluated both ways; the user decides |
-| Extract the claim (metric, value, scope) | the sentence must occur verbatim in the notebook and the value inside that sentence; otherwise the rule-based reader is used |
-| Explain findings for the reader | the text may only contain numbers present in the verified evidence, otherwise the template text is kept |
+Feature-name screening is a transparent, rule-based process. It can propose predictors that appear unavailable at the prediction time, but it cannot determine clinical or domain-specific timing by itself. Every proposed feature is evaluated in both scenarios. The researcher confirms whether the feature is legitimate before the final decision is recorded.
 
-Without an API key, rule-based readers with the same interfaces are used, and the interface says so.
+Claim extraction uses explicit metric and value patterns in the supplied notebook text. Findings and verdicts are generated from executed experiments and fixed rules.

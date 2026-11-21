@@ -7,7 +7,7 @@
 
 ```yaml
 ---
-title: LeakVerity AI
+title: LeakVerity
 emoji: 💧
 colorFrom: blue
 colorTo: green
@@ -16,13 +16,11 @@ app_port: 7860
 ---
 ```
 
-3. Optional: under Settings → Variables and secrets, add `ANTHROPIC_API_KEY` (or `OPENAI_API_KEY`) to enable the AI reader for everyone. Without it, the rule-based reader is used and labelled as such.
-
 ## Render / any container host
 
 ```bash
 docker build -t leakverity .
-docker run -p 7860:7860 -e ANTHROPIC_API_KEY=... leakverity
+docker run -p 7860:7860 leakverity
 ```
 
 `PORT` is honoured if your host sets it.

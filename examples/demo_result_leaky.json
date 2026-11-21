@@ -1,2122 +1,2114 @@
 {
- "id": "LV-C1CD073A3D",
- "version": "1.0.0",
- "created": "2026-11-20 18:55:53 UTC",
- "inputs": {
-  "code": "readmission_model.ipynb",
-  "data": "hospital_readmissions.csv",
-  "code_sha256": "963f49100f9730fa3217dabe3cea99f08cd190aafd60139f7124ec62c87278a6",
-  "data_sha256": "1e798bd4cfa3b8aaf3786356c0228dfc361522c650eee676c32af539b195d0fc"
- },
- "environment": {
-  "python": "3.13.18",
-  "scikit-learn": "1.9.1",
-  "numpy": "2.5.3",
-  "pandas": "3.0.5",
-  "scipy": "1.18.1",
-  "leakverity": "1.0.0"
- },
- "options": {
-  "target": null,
-  "group_col": null,
-  "date_col": null,
-  "subgroup_col": null,
-  "claim_text": null,
-  "prediction_point": null,
-  "n_seeds": 6,
-  "use_ai": true,
-  "provider": null,
-  "model": null,
-  "auto_roles": true,
-  "known_leaks": null,
-  "not_leaks": null,
-  "run_survival": true,
-  "timeout": 300
- },
- "source": {
-  "kind": "notebook",
-  "code": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.ensemble import RandomForestClassifier\nfrom sklearn.metrics import roc_auc_score\n\ndf = pd.read_csv(\"hospital_readmissions.csv\")\ndf.head()\n\nfeatures = [\"age\", \"sex_male\", \"comorbidity_index\", \"hba1c\", \"num_prior_admissions\",\n            \"length_of_stay\", \"num_medications\", \"num_diagnoses\", \"emergency_admission\",\n            \"followup_ed_visits_30d\"]\nX = df[features]\ny = df[\"readmitted_30d\"]\n\nscaler = StandardScaler()\nX_scaled = scaler.fit_transform(X)\n\nX_train, X_test, y_train, y_test = train_test_split(\n    X_scaled, y, test_size=0.25, random_state=42, stratify=y)\n\nbest_auc, best_seed = 0, None\nfor seed in range(10):\n    model = RandomForestClassifier(n_estimators=100, random_state=seed, n_jobs=-1)\n    model.fit(X_train, y_train)\n    auc = roc_auc_score(y_test, model.predict_proba(X_test)[:, 1])\n    if auc > best_auc:\n        best_auc, best_seed = auc, seed\nprint(f\"Test AUC: {best_auc:.3f} (seed {best_seed})\")\n",
-  "line_map": [
-   [
-    1,
-    1
-   ],
-   [
-    1,
-    2
-   ],
-   [
-    1,
-    3
-   ],
-   [
-    1,
-    4
-   ],
-   [
-    1,
-    5
-   ],
-   [
-    1,
-    6
-   ],
-   [
-    1,
-    7
-   ],
-   [
-    2,
-    1
-   ],
-   [
-    2,
-    2
-   ],
-   [
-    2,
-    3
-   ],
-   [
-    3,
-    1
-   ],
-   [
-    3,
-    2
-   ],
-   [
-    3,
-    3
-   ],
-   [
-    3,
-    4
-   ],
-   [
-    3,
-    5
-   ],
-   [
-    3,
-    6
-   ],
-   [
-    4,
-    1
-   ],
-   [
-    4,
-    2
-   ],
-   [
-    4,
-    3
-   ],
-   [
-    5,
-    1
-   ],
-   [
-    5,
-    2
-   ],
-   [
-    5,
-    3
-   ],
-   [
-    6,
-    1
-   ],
-   [
-    6,
-    2
-   ],
-   [
-    6,
-    3
-   ],
-   [
-    6,
-    4
-   ],
-   [
-    6,
-    5
-   ],
-   [
-    6,
-    6
-   ],
-   [
-    6,
-    7
-   ],
-   [
-    6,
-    8
-   ],
-   [
-    6,
-    9
-   ]
-  ],
-  "cells": [
-   {
-    "type": "markdown",
-    "source": "# Predicting 30-day hospital readmission\n\nRandom forest model on 2,700 discharge encounters (synthetic, non-identifiable data)."
-   },
-   {
-    "type": "code",
-    "source": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.ensemble import RandomForestClassifier\nfrom sklearn.metrics import roc_auc_score"
-   },
-   {
-    "type": "code",
-    "source": "df = pd.read_csv(\"hospital_readmissions.csv\")\ndf.head()"
-   },
-   {
-    "type": "code",
-    "source": "features = [\"age\", \"sex_male\", \"comorbidity_index\", \"hba1c\", \"num_prior_admissions\",\n            \"length_of_stay\", \"num_medications\", \"num_diagnoses\", \"emergency_admission\",\n            \"followup_ed_visits_30d\"]\nX = df[features]\ny = df[\"readmitted_30d\"]"
-   },
-   {
-    "type": "code",
-    "source": "scaler = StandardScaler()\nX_scaled = scaler.fit_transform(X)"
-   },
-   {
-    "type": "code",
-    "source": "X_train, X_test, y_train, y_test = train_test_split(\n    X_scaled, y, test_size=0.25, random_state=42, stratify=y)"
-   },
-   {
-    "type": "code",
-    "source": "best_auc, best_seed = 0, None\nfor seed in range(10):\n    model = RandomForestClassifier(n_estimators=100, random_state=seed, n_jobs=-1)\n    model.fit(X_train, y_train)\n    auc = roc_auc_score(y_test, model.predict_proba(X_test)[:, 1])\n    if auc > best_auc:\n        best_auc, best_seed = auc, seed\nprint(f\"Test AUC: {best_auc:.3f} (seed {best_seed})\")"
-   },
-   {
-    "type": "markdown",
-    "source": "## Result\n\nOur random forest predicts 30-day readmission with a test **AUC of 0.94**, which supports deploying it at discharge for all adult patients."
-   }
-  ]
- },
- "data": {
-  "rows": 2726,
-  "columns": [
-   "encounter_id",
-   "patient_id",
-   "admit_date",
-   "age",
-   "age_group",
-   "sex_male",
-   "comorbidity_index",
-   "hba1c",
-   "num_prior_admissions",
-   "length_of_stay",
-   "num_medications",
-   "num_diagnoses",
-   "emergency_admission",
-   "followup_ed_visits_30d",
-   "readmitted_30d"
-  ]
- },
- "reproduction": {
-  "ok": true,
-  "seconds": 5.0,
-  "stdout": "Test AUC: 0.939 (seed 8)\n",
-  "error": null,
-  "metrics": [
-   {
-    "name": "roc_auc_score",
-    "value": 0.933440229257642,
-    "line": 27,
-    "where": "cell 7, line 5"
-   },
-   {
-    "name": "roc_auc_score",
-    "value": 0.9352532361197754,
-    "line": 27,
-    "where": "cell 7, line 5"
-   },
-   {
-    "name": "roc_auc_score",
-    "value": 0.9345757953836556,
-    "line": 27,
-    "where": "cell 7, line 5"
-   },
-   {
-    "name": "roc_auc_score",
-    "value": 0.9324118839675607,
-    "line": 27,
-    "where": "cell 7, line 5"
-   },
-   {
-    "name": "roc_auc_score",
-    "value": 0.9372709373050532,
-    "line": 27,
-    "where": "cell 7, line 5"
-   },
-   {
-    "name": "roc_auc_score",
-    "value": 0.933839870555209,
-    "line": 27,
-    "where": "cell 7, line 5"
-   },
-   {
-    "name": "roc_auc_score",
-    "value": 0.9347512476606364,
-    "line": 27,
-    "where": "cell 7, line 5"
-   },
-   {
-    "name": "roc_auc_score",
-    "value": 0.9338886072988147,
-    "line": 27,
-    "where": "cell 7, line 5"
-   },
-   {
-    "name": "roc_auc_score",
-    "value": 0.9389815970056145,
-    "line": 27,
-    "where": "cell 7, line 5"
-   },
-   {
-    "name": "roc_auc_score",
-    "value": 0.9319196428571429,
-    "line": 27,
-    "where": "cell 7, line 5"
-   }
-  ]
- },
- "trace": [
-  {
-   "type": "load",
-   "seq": 1,
-   "path": "hospital_readmissions.csv",
-   "requested": "hospital_readmissions.csv",
-   "shape": [
-    2726,
-    15
-   ],
-   "columns": [
-    "encounter_id",
-    "patient_id",
-    "admit_date",
-    "age",
-    "age_group",
-    "sex_male",
-    "comorbidity_index",
-    "hba1c",
-    "num_prior_admissions",
-    "length_of_stay",
-    "num_medications",
-    "num_diagnoses",
-    "emergency_admission",
-    "followup_ed_visits_30d",
-    "readmitted_30d"
-   ],
-   "line": 8,
-   "index_col": null,
-   "where": "cell 3, line 1"
+  "id": "LV-C1CD073A3D",
+  "version": "1.0.0",
+  "created": "2026-11-20 18:55:53 UTC",
+  "inputs": {
+    "code": "readmission_model.ipynb",
+    "data": "hospital_readmissions.csv",
+    "code_sha256": "963f49100f9730fa3217dabe3cea99f08cd190aafd60139f7124ec62c87278a6",
+    "data_sha256": "1e798bd4cfa3b8aaf3786356c0228dfc361522c650eee676c32af539b195d0fc"
   },
-  {
-   "type": "fit",
-   "seq": 2,
-   "method": "fit_transform",
-   "class": "StandardScaler",
-   "module": "sklearn.preprocessing._data",
-   "kind": "transformer",
-   "params": {
-    "copy": true,
-    "with_mean": true,
-    "with_std": true
-   },
-   "n_rows": 2726,
-   "n_cols": 10,
-   "columns": [
-    "age",
-    "sex_male",
-    "comorbidity_index",
-    "hba1c",
-    "num_prior_admissions",
-    "length_of_stay",
-    "num_medications",
-    "num_diagnoses",
-    "emergency_admission",
-    "followup_ed_visits_30d"
-   ],
-   "line": 18,
-   "has_y": false,
-   "y_hash": null,
-   "where": "cell 5, line 2"
+  "environment": {
+    "python": "3.13.18",
+    "scikit-learn": "1.9.1",
+    "numpy": "2.5.3",
+    "pandas": "3.0.5",
+    "scipy": "1.18.1",
+    "leakverity": "1.0.0"
   },
-  {
-   "type": "split",
-   "seq": 3,
-   "n": 2726,
-   "n_arrays": 2,
-   "line": 20,
-   "test_size": 0.25,
-   "train_size": null,
-   "random_state": 42,
-   "shuffle": true,
-   "stratified": true,
-   "input_columns": null,
-   "test_rows_duplicated_in_train": 60,
-   "y_hash_test": "249f21b514cd5e8c",
-   "y_hash_train": "8a7949f2035c44ee",
-   "where": "cell 6, line 1"
+  "options": {
+    "target": null,
+    "group_col": null,
+    "date_col": null,
+    "subgroup_col": null,
+    "claim_text": null,
+    "prediction_point": null,
+    "n_seeds": 6,
+    "auto_roles": true,
+    "known_leaks": null,
+    "not_leaks": null,
+    "run_survival": true,
+    "timeout": 300
   },
-  {
-   "type": "fit",
-   "seq": 4,
-   "method": "fit",
-   "class": "RandomForestClassifier",
-   "module": "sklearn.ensemble._forest",
-   "kind": "model",
-   "params": {
-    "bootstrap": true,
-    "ccp_alpha": 0.0,
-    "class_weight": null,
-    "criterion": "gini",
-    "max_depth": null,
-    "max_features": "sqrt",
-    "max_leaf_nodes": null,
-    "max_samples": null,
-    "min_impurity_decrease": 0.0,
-    "min_samples_leaf": 1,
-    "min_samples_split": 2,
-    "min_weight_fraction_leaf": 0.0,
-    "monotonic_cst": null,
-    "n_estimators": 100,
-    "n_jobs": -1,
-    "oob_score": false,
-    "random_state": 0,
-    "verbose": 0,
-    "warm_start": false
-   },
-   "n_rows": 2044,
-   "n_cols": 10,
-   "columns": null,
-   "line": 26,
-   "has_y": true,
-   "y_hash": "8a7949f2035c44ee",
-   "rows_in_test": 60,
-   "rows_in_train": 2044,
-   "where": "cell 7, line 4"
-  },
-  {
-   "type": "predict",
-   "seq": 5,
-   "method": "predict_proba",
-   "class": "RandomForestClassifier",
-   "n_rows": 682,
-   "line": 27,
-   "rows_in_test": 682,
-   "rows_in_train": 60,
-   "where": "cell 7, line 5"
-  },
-  {
-   "type": "metric",
-   "seq": 6,
-   "name": "roc_auc_score",
-   "value": 0.933440229257642,
-   "n": 682,
-   "y_hash": "249f21b514cd5e8c",
-   "line": 27,
-   "where": "cell 7, line 5"
-  },
-  {
-   "type": "fit",
-   "seq": 7,
-   "method": "fit",
-   "class": "RandomForestClassifier",
-   "module": "sklearn.ensemble._forest",
-   "kind": "model",
-   "params": {
-    "bootstrap": true,
-    "ccp_alpha": 0.0,
-    "class_weight": null,
-    "criterion": "gini",
-    "max_depth": null,
-    "max_features": "sqrt",
-    "max_leaf_nodes": null,
-    "max_samples": null,
-    "min_impurity_decrease": 0.0,
-    "min_samples_leaf": 1,
-    "min_samples_split": 2,
-    "min_weight_fraction_leaf": 0.0,
-    "monotonic_cst": null,
-    "n_estimators": 100,
-    "n_jobs": -1,
-    "oob_score": false,
-    "random_state": 1,
-    "verbose": 0,
-    "warm_start": false
-   },
-   "n_rows": 2044,
-   "n_cols": 10,
-   "columns": null,
-   "line": 26,
-   "has_y": true,
-   "y_hash": "8a7949f2035c44ee",
-   "rows_in_test": 60,
-   "rows_in_train": 2044,
-   "where": "cell 7, line 4"
-  },
-  {
-   "type": "predict",
-   "seq": 8,
-   "method": "predict_proba",
-   "class": "RandomForestClassifier",
-   "n_rows": 682,
-   "line": 27,
-   "rows_in_test": 682,
-   "rows_in_train": 60,
-   "where": "cell 7, line 5"
-  },
-  {
-   "type": "metric",
-   "seq": 9,
-   "name": "roc_auc_score",
-   "value": 0.9352532361197754,
-   "n": 682,
-   "y_hash": "249f21b514cd5e8c",
-   "line": 27,
-   "where": "cell 7, line 5"
-  },
-  {
-   "type": "fit",
-   "seq": 10,
-   "method": "fit",
-   "class": "RandomForestClassifier",
-   "module": "sklearn.ensemble._forest",
-   "kind": "model",
-   "params": {
-    "bootstrap": true,
-    "ccp_alpha": 0.0,
-    "class_weight": null,
-    "criterion": "gini",
-    "max_depth": null,
-    "max_features": "sqrt",
-    "max_leaf_nodes": null,
-    "max_samples": null,
-    "min_impurity_decrease": 0.0,
-    "min_samples_leaf": 1,
-    "min_samples_split": 2,
-    "min_weight_fraction_leaf": 0.0,
-    "monotonic_cst": null,
-    "n_estimators": 100,
-    "n_jobs": -1,
-    "oob_score": false,
-    "random_state": 2,
-    "verbose": 0,
-    "warm_start": false
-   },
-   "n_rows": 2044,
-   "n_cols": 10,
-   "columns": null,
-   "line": 26,
-   "has_y": true,
-   "y_hash": "8a7949f2035c44ee",
-   "rows_in_test": 60,
-   "rows_in_train": 2044,
-   "where": "cell 7, line 4"
-  },
-  {
-   "type": "predict",
-   "seq": 11,
-   "method": "predict_proba",
-   "class": "RandomForestClassifier",
-   "n_rows": 682,
-   "line": 27,
-   "rows_in_test": 682,
-   "rows_in_train": 60,
-   "where": "cell 7, line 5"
-  },
-  {
-   "type": "metric",
-   "seq": 12,
-   "name": "roc_auc_score",
-   "value": 0.9345757953836556,
-   "n": 682,
-   "y_hash": "249f21b514cd5e8c",
-   "line": 27,
-   "where": "cell 7, line 5"
-  },
-  {
-   "type": "fit",
-   "seq": 13,
-   "method": "fit",
-   "class": "RandomForestClassifier",
-   "module": "sklearn.ensemble._forest",
-   "kind": "model",
-   "params": {
-    "bootstrap": true,
-    "ccp_alpha": 0.0,
-    "class_weight": null,
-    "criterion": "gini",
-    "max_depth": null,
-    "max_features": "sqrt",
-    "max_leaf_nodes": null,
-    "max_samples": null,
-    "min_impurity_decrease": 0.0,
-    "min_samples_leaf": 1,
-    "min_samples_split": 2,
-    "min_weight_fraction_leaf": 0.0,
-    "monotonic_cst": null,
-    "n_estimators": 100,
-    "n_jobs": -1,
-    "oob_score": false,
-    "random_state": 3,
-    "verbose": 0,
-    "warm_start": false
-   },
-   "n_rows": 2044,
-   "n_cols": 10,
-   "columns": null,
-   "line": 26,
-   "has_y": true,
-   "y_hash": "8a7949f2035c44ee",
-   "rows_in_test": 60,
-   "rows_in_train": 2044,
-   "where": "cell 7, line 4"
-  },
-  {
-   "type": "predict",
-   "seq": 14,
-   "method": "predict_proba",
-   "class": "RandomForestClassifier",
-   "n_rows": 682,
-   "line": 27,
-   "rows_in_test": 682,
-   "rows_in_train": 60,
-   "where": "cell 7, line 5"
-  },
-  {
-   "type": "metric",
-   "seq": 15,
-   "name": "roc_auc_score",
-   "value": 0.9324118839675607,
-   "n": 682,
-   "y_hash": "249f21b514cd5e8c",
-   "line": 27,
-   "where": "cell 7, line 5"
-  },
-  {
-   "type": "fit",
-   "seq": 16,
-   "method": "fit",
-   "class": "RandomForestClassifier",
-   "module": "sklearn.ensemble._forest",
-   "kind": "model",
-   "params": {
-    "bootstrap": true,
-    "ccp_alpha": 0.0,
-    "class_weight": null,
-    "criterion": "gini",
-    "max_depth": null,
-    "max_features": "sqrt",
-    "max_leaf_nodes": null,
-    "max_samples": null,
-    "min_impurity_decrease": 0.0,
-    "min_samples_leaf": 1,
-    "min_samples_split": 2,
-    "min_weight_fraction_leaf": 0.0,
-    "monotonic_cst": null,
-    "n_estimators": 100,
-    "n_jobs": -1,
-    "oob_score": false,
-    "random_state": 4,
-    "verbose": 0,
-    "warm_start": false
-   },
-   "n_rows": 2044,
-   "n_cols": 10,
-   "columns": null,
-   "line": 26,
-   "has_y": true,
-   "y_hash": "8a7949f2035c44ee",
-   "rows_in_test": 60,
-   "rows_in_train": 2044,
-   "where": "cell 7, line 4"
-  },
-  {
-   "type": "predict",
-   "seq": 17,
-   "method": "predict_proba",
-   "class": "RandomForestClassifier",
-   "n_rows": 682,
-   "line": 27,
-   "rows_in_test": 682,
-   "rows_in_train": 60,
-   "where": "cell 7, line 5"
-  },
-  {
-   "type": "metric",
-   "seq": 18,
-   "name": "roc_auc_score",
-   "value": 0.9372709373050532,
-   "n": 682,
-   "y_hash": "249f21b514cd5e8c",
-   "line": 27,
-   "where": "cell 7, line 5"
-  },
-  {
-   "type": "fit",
-   "seq": 19,
-   "method": "fit",
-   "class": "RandomForestClassifier",
-   "module": "sklearn.ensemble._forest",
-   "kind": "model",
-   "params": {
-    "bootstrap": true,
-    "ccp_alpha": 0.0,
-    "class_weight": null,
-    "criterion": "gini",
-    "max_depth": null,
-    "max_features": "sqrt",
-    "max_leaf_nodes": null,
-    "max_samples": null,
-    "min_impurity_decrease": 0.0,
-    "min_samples_leaf": 1,
-    "min_samples_split": 2,
-    "min_weight_fraction_leaf": 0.0,
-    "monotonic_cst": null,
-    "n_estimators": 100,
-    "n_jobs": -1,
-    "oob_score": false,
-    "random_state": 5,
-    "verbose": 0,
-    "warm_start": false
-   },
-   "n_rows": 2044,
-   "n_cols": 10,
-   "columns": null,
-   "line": 26,
-   "has_y": true,
-   "y_hash": "8a7949f2035c44ee",
-   "rows_in_test": 60,
-   "rows_in_train": 2044,
-   "where": "cell 7, line 4"
-  },
-  {
-   "type": "predict",
-   "seq": 20,
-   "method": "predict_proba",
-   "class": "RandomForestClassifier",
-   "n_rows": 682,
-   "line": 27,
-   "rows_in_test": 682,
-   "rows_in_train": 60,
-   "where": "cell 7, line 5"
-  },
-  {
-   "type": "metric",
-   "seq": 21,
-   "name": "roc_auc_score",
-   "value": 0.933839870555209,
-   "n": 682,
-   "y_hash": "249f21b514cd5e8c",
-   "line": 27,
-   "where": "cell 7, line 5"
-  },
-  {
-   "type": "fit",
-   "seq": 22,
-   "method": "fit",
-   "class": "RandomForestClassifier",
-   "module": "sklearn.ensemble._forest",
-   "kind": "model",
-   "params": {
-    "bootstrap": true,
-    "ccp_alpha": 0.0,
-    "class_weight": null,
-    "criterion": "gini",
-    "max_depth": null,
-    "max_features": "sqrt",
-    "max_leaf_nodes": null,
-    "max_samples": null,
-    "min_impurity_decrease": 0.0,
-    "min_samples_leaf": 1,
-    "min_samples_split": 2,
-    "min_weight_fraction_leaf": 0.0,
-    "monotonic_cst": null,
-    "n_estimators": 100,
-    "n_jobs": -1,
-    "oob_score": false,
-    "random_state": 6,
-    "verbose": 0,
-    "warm_start": false
-   },
-   "n_rows": 2044,
-   "n_cols": 10,
-   "columns": null,
-   "line": 26,
-   "has_y": true,
-   "y_hash": "8a7949f2035c44ee",
-   "rows_in_test": 60,
-   "rows_in_train": 2044,
-   "where": "cell 7, line 4"
-  },
-  {
-   "type": "predict",
-   "seq": 23,
-   "method": "predict_proba",
-   "class": "RandomForestClassifier",
-   "n_rows": 682,
-   "line": 27,
-   "rows_in_test": 682,
-   "rows_in_train": 60,
-   "where": "cell 7, line 5"
-  },
-  {
-   "type": "metric",
-   "seq": 24,
-   "name": "roc_auc_score",
-   "value": 0.9347512476606364,
-   "n": 682,
-   "y_hash": "249f21b514cd5e8c",
-   "line": 27,
-   "where": "cell 7, line 5"
-  },
-  {
-   "type": "fit",
-   "seq": 25,
-   "method": "fit",
-   "class": "RandomForestClassifier",
-   "module": "sklearn.ensemble._forest",
-   "kind": "model",
-   "params": {
-    "bootstrap": true,
-    "ccp_alpha": 0.0,
-    "class_weight": null,
-    "criterion": "gini",
-    "max_depth": null,
-    "max_features": "sqrt",
-    "max_leaf_nodes": null,
-    "max_samples": null,
-    "min_impurity_decrease": 0.0,
-    "min_samples_leaf": 1,
-    "min_samples_split": 2,
-    "min_weight_fraction_leaf": 0.0,
-    "monotonic_cst": null,
-    "n_estimators": 100,
-    "n_jobs": -1,
-    "oob_score": false,
-    "random_state": 7,
-    "verbose": 0,
-    "warm_start": false
-   },
-   "n_rows": 2044,
-   "n_cols": 10,
-   "columns": null,
-   "line": 26,
-   "has_y": true,
-   "y_hash": "8a7949f2035c44ee",
-   "rows_in_test": 60,
-   "rows_in_train": 2044,
-   "where": "cell 7, line 4"
-  },
-  {
-   "type": "predict",
-   "seq": 26,
-   "method": "predict_proba",
-   "class": "RandomForestClassifier",
-   "n_rows": 682,
-   "line": 27,
-   "rows_in_test": 682,
-   "rows_in_train": 60,
-   "where": "cell 7, line 5"
-  },
-  {
-   "type": "metric",
-   "seq": 27,
-   "name": "roc_auc_score",
-   "value": 0.9338886072988147,
-   "n": 682,
-   "y_hash": "249f21b514cd5e8c",
-   "line": 27,
-   "where": "cell 7, line 5"
-  },
-  {
-   "type": "fit",
-   "seq": 28,
-   "method": "fit",
-   "class": "RandomForestClassifier",
-   "module": "sklearn.ensemble._forest",
-   "kind": "model",
-   "params": {
-    "bootstrap": true,
-    "ccp_alpha": 0.0,
-    "class_weight": null,
-    "criterion": "gini",
-    "max_depth": null,
-    "max_features": "sqrt",
-    "max_leaf_nodes": null,
-    "max_samples": null,
-    "min_impurity_decrease": 0.0,
-    "min_samples_leaf": 1,
-    "min_samples_split": 2,
-    "min_weight_fraction_leaf": 0.0,
-    "monotonic_cst": null,
-    "n_estimators": 100,
-    "n_jobs": -1,
-    "oob_score": false,
-    "random_state": 8,
-    "verbose": 0,
-    "warm_start": false
-   },
-   "n_rows": 2044,
-   "n_cols": 10,
-   "columns": null,
-   "line": 26,
-   "has_y": true,
-   "y_hash": "8a7949f2035c44ee",
-   "rows_in_test": 60,
-   "rows_in_train": 2044,
-   "where": "cell 7, line 4"
-  },
-  {
-   "type": "predict",
-   "seq": 29,
-   "method": "predict_proba",
-   "class": "RandomForestClassifier",
-   "n_rows": 682,
-   "line": 27,
-   "rows_in_test": 682,
-   "rows_in_train": 60,
-   "where": "cell 7, line 5"
-  },
-  {
-   "type": "metric",
-   "seq": 30,
-   "name": "roc_auc_score",
-   "value": 0.9389815970056145,
-   "n": 682,
-   "y_hash": "249f21b514cd5e8c",
-   "line": 27,
-   "where": "cell 7, line 5"
-  },
-  {
-   "type": "fit",
-   "seq": 31,
-   "method": "fit",
-   "class": "RandomForestClassifier",
-   "module": "sklearn.ensemble._forest",
-   "kind": "model",
-   "params": {
-    "bootstrap": true,
-    "ccp_alpha": 0.0,
-    "class_weight": null,
-    "criterion": "gini",
-    "max_depth": null,
-    "max_features": "sqrt",
-    "max_leaf_nodes": null,
-    "max_samples": null,
-    "min_impurity_decrease": 0.0,
-    "min_samples_leaf": 1,
-    "min_samples_split": 2,
-    "min_weight_fraction_leaf": 0.0,
-    "monotonic_cst": null,
-    "n_estimators": 100,
-    "n_jobs": -1,
-    "oob_score": false,
-    "random_state": 9,
-    "verbose": 0,
-    "warm_start": false
-   },
-   "n_rows": 2044,
-   "n_cols": 10,
-   "columns": null,
-   "line": 26,
-   "has_y": true,
-   "y_hash": "8a7949f2035c44ee",
-   "rows_in_test": 60,
-   "rows_in_train": 2044,
-   "where": "cell 7, line 4"
-  },
-  {
-   "type": "predict",
-   "seq": 32,
-   "method": "predict_proba",
-   "class": "RandomForestClassifier",
-   "n_rows": 682,
-   "line": 27,
-   "rows_in_test": 682,
-   "rows_in_train": 60,
-   "where": "cell 7, line 5"
-  },
-  {
-   "type": "metric",
-   "seq": 33,
-   "name": "roc_auc_score",
-   "value": 0.9319196428571429,
-   "n": 682,
-   "y_hash": "249f21b514cd5e8c",
-   "line": 27,
-   "where": "cell 7, line 5"
-  }
- ],
- "ai": {
-  "enabled": false,
-  "provider": null,
-  "model": null
- },
- "roles": {
-  "target": "readmitted_30d",
-  "group": "patient_id",
-  "date": "admit_date",
-  "subgroup": "age_group",
-  "auto": {
-   "group": true,
-   "date": true,
-   "subgroup": true
-  }
- },
- "claim": {
-  "text": "Our random forest predicts 30-day readmission with a test AUC of 0.94, which supports deploying it at discharge for all adult patients.",
-  "metric": "roc_auc_score",
-  "value": 0.94,
-  "general": true,
-  "source": "notebook text"
- },
- "protocol": {
-  "supported": true,
-  "metric": "roc_auc_score",
-  "metric_label": "AUC",
-  "reported": 0.9389815970056145,
-  "reported_where": "cell 7, line 5",
-  "split": {
-   "type": "split",
-   "seq": 3,
-   "n": 2726,
-   "n_arrays": 2,
-   "line": 20,
-   "test_size": 0.25,
-   "train_size": null,
-   "random_state": 42,
-   "shuffle": true,
-   "stratified": true,
-   "test_rows_duplicated_in_train": 60,
-   "y_hash_test": "249f21b514cd5e8c",
-   "y_hash_train": "8a7949f2035c44ee",
-   "where": "cell 6, line 1"
-  },
-  "pre_split_steps": [
-   {
-    "class": "StandardScaler",
-    "kind": "transformer",
-    "where": "cell 5, line 2",
-    "line": 18
-   }
-  ],
-  "post_split_steps": [],
-  "model": "RandomForestClassifier",
-  "model_params": {
-   "bootstrap": true,
-   "ccp_alpha": 0.0,
-   "class_weight": null,
-   "criterion": "gini",
-   "max_depth": null,
-   "max_features": "sqrt",
-   "max_leaf_nodes": null,
-   "max_samples": null,
-   "min_impurity_decrease": 0.0,
-   "min_samples_leaf": 1,
-   "min_samples_split": 2,
-   "min_weight_fraction_leaf": 0.0,
-   "monotonic_cst": null,
-   "n_estimators": 100,
-   "n_jobs": -1,
-   "oob_score": false,
-   "random_state": 0,
-   "verbose": 0,
-   "warm_start": false
-  },
-  "candidates": 10,
-  "selection": "seed",
-  "features": [
-   "age",
-   "sex_male",
-   "comorbidity_index",
-   "hba1c",
-   "num_prior_admissions",
-   "length_of_stay",
-   "num_medications",
-   "num_diagnoses",
-   "emergency_admission",
-   "followup_ed_visits_30d"
-  ],
-  "n_train": 2044,
-  "n_test": 682,
-  "prevalence": 0.32831988261188555,
-  "flow": [
-   "Load data",
-   "Fit StandardScaler (all rows)",
-   "Split (train_test_split)",
-   "Fit RandomForestClassifier \u00d710",
-   "Evaluate on test \u2192 keep best"
-  ]
- },
- "feature_audit": {
-  "flags": [
-   {
-    "column": "followup_ed_visits_30d",
-    "reason": "The name \u201cfollowup_ed_visits_30d\u201d suggests it is recorded after the prediction point or derived from the outcome, and on its own it separates the classes with AUC 0.90.",
-    "confidence": "high",
-    "auc": 0.9018282283088582,
-    "source": "rules",
-    "needs_review": false
-   }
-  ],
-  "source": "rules",
-  "prediction_point": null,
-  "columns": [
-   {
-    "column": "age",
-    "dtype": "int64",
-    "examples": "56, 69, 74, 70",
-    "auc": 0.5597786720935838
-   },
-   {
-    "column": "sex_male",
-    "dtype": "int64",
-    "examples": "1, 0",
-    "auc": 0.5022001592682205
-   },
-   {
-    "column": "comorbidity_index",
-    "dtype": "int64",
-    "examples": "1, 7, 3, 5",
-    "auc": 0.6645054599708924
-   },
-   {
-    "column": "hba1c",
-    "dtype": "float64",
-    "examples": "5.9, 6.8, 5.2, 6.3",
-    "auc": 0.6096158950904503
-   },
-   {
-    "column": "num_prior_admissions",
-    "dtype": "int64",
-    "examples": "4, 2, 0, 1",
-    "auc": 0.6479354628084296
-   },
-   {
-    "column": "length_of_stay",
-    "dtype": "int64",
-    "examples": "3, 7, 1, 6",
-    "auc": 0.6256397426079103
-   },
-   {
-    "column": "num_medications",
-    "dtype": "int64",
-    "examples": "13, 17, 7, 6",
-    "auc": 0.6420797622570932
-   },
-   {
-    "column": "num_diagnoses",
-    "dtype": "int64",
-    "examples": "7, 14, 9, 6",
-    "auc": 0.5892777704890022
-   },
-   {
-    "column": "emergency_admission",
-    "dtype": "int64",
-    "examples": "0, 1",
-    "auc": 0.5581078813360223
-   },
-   {
-    "column": "followup_ed_visits_30d",
-    "dtype": "int64",
-    "examples": "4, 0, 1, 2",
-    "auc": 0.9018282283088582
-   }
-  ],
-  "target": "readmitted_30d"
- },
- "replay": {
-  "fidelity_ok": true,
-  "fidelity_value": 0.9389815970056145,
-  "reported": 0.9389815970056145,
-  "fixes": [
-   "preprocessing",
-   "duplicates",
-   "group_overlap",
-   "proposed_features",
-   "test_selection"
-  ],
-  "seeds": [
-   42,
-   1000,
-   1001,
-   1002,
-   1003,
-   1004
-  ],
-  "table": {
-   "none": [
-    0.9389815970056145,
-    0.937202705864005,
-    0.9356285090455396,
-    0.9460630458515285,
-    0.9491480817217717,
-    0.9392935121646911
-   ],
-   "preprocessing": [
-    0.9394835854647536,
-    0.9376510839051778,
-    0.9358916874610107,
-    0.945185784466625,
-    0.9496500701809107,
-    0.9394884591391142
-   ],
-   "duplicates": [
-    0.9279664735825874,
-    0.9303416271721958,
-    0.917089038090223,
-    0.9384818764261891,
-    0.9257997630331753,
-    0.954685580129893
-   ],
-   "group_overlap": [
-    0.9245123933360423,
-    0.9205942221874266,
-    0.9450742240215925,
-    0.9396634364905699,
-    0.9432052502180982,
-    0.9338559358940858
-   ],
-   "proposed_features": [
-    0.7584558250155957,
-    0.7213086790393014,
-    0.7343262632563942,
-    0.7487377183406114,
-    0.7496539691203993,
-    0.7275664769182782
-   ],
-   "test_selection": [
-    0.9346333047411104,
-    0.9341147457891454,
-    0.9335035870243292,
-    0.9430028657205242,
-    0.9465367669993761,
-    0.9362801193075484
-   ],
-   "duplicates+preprocessing": [
-    0.9283285062313498,
-    0.9311808846761452,
-    0.9192283219238196,
-    0.9388932771634193,
-    0.9250921537651396,
-    0.9544442250307179
-   ],
-   "group_overlap+preprocessing": [
-    0.9248679398618447,
-    0.9203495654897047,
-    0.9463000449842556,
-    0.9392310096905282,
-    0.943577008486002,
-    0.9331199372876927
-   ],
-   "preprocessing+proposed_features": [
-    0.7565209762944479,
-    0.7222054351216469,
-    0.735632407985028,
-    0.7485378976918278,
-    0.7470270586400499,
-    0.7279222551466001
-   ],
-   "preprocessing+test_selection": [
-    0.9349057431378667,
-    0.9346264815970058,
-    0.9339090767311291,
-    0.9432031737367437,
-    0.9466293668122269,
-    0.9358024992202122
-   ],
-   "duplicates+group_overlap": [
-    0.9217833241657498,
-    0.9155834729201564,
-    0.9467619399091383,
-    0.9359655172413794,
-    0.9418476219929752,
-    0.935416848707269
-   ],
-   "duplicates+proposed_features": [
-    0.7322110321221695,
-    0.719468579954362,
-    0.7274003861681586,
-    0.7226665350184307,
-    0.7258315780235212,
-    0.7252994997367037
-   ],
-   "duplicates+test_selection": [
-    0.9264130243988065,
-    0.927100886431455,
-    0.913441833421099,
-    0.9358384895559066,
-    0.9219051693873969,
-    0.9512100667017729
-   ],
-   "group_overlap+proposed_features": [
-    0.7050386021942299,
-    0.6982012839583497,
-    0.7143556005398111,
-    0.7289517557570074,
-    0.7338706479498771,
-    0.6880803065935024
-   ],
-   "group_overlap+test_selection": [
-    0.9204576391710686,
-    0.9169180106474594,
-    0.9421839856050382,
-    0.9360315723663645,
-    0.9415313466571495,
-    0.9288263217489765
-   ],
-   "proposed_features+test_selection": [
-    0.7505044252963194,
-    0.7139913443543356,
-    0.7275338233000623,
-    0.7430379561759202,
-    0.7392457501559576,
-    0.7224734872114784
-   ],
-   "duplicates+group_overlap+preprocessing": [
-    0.920557159882655,
-    0.91643216080402,
-    0.9469019228566702,
-    0.9355747126436781,
-    0.9415217919547592,
-    0.9359605433062458
-   ],
-   "duplicates+preprocessing+proposed_features": [
-    0.7333519835000878,
-    0.7195837721607864,
-    0.7277020800421274,
-    0.7233522029138142,
-    0.7240707828681763,
-    0.7254037212568017
-   ],
-   "duplicates+preprocessing+test_selection": [
-    0.9266988107776024,
-    0.9274815692469719,
-    0.9134155037739161,
-    0.9362060075478322,
-    0.921728541337546,
-    0.9507684965771457
-   ],
-   "group_overlap+preprocessing+proposed_features": [
-    0.7062626980902073,
-    0.6982306427620762,
-    0.7122863247863248,
-    0.7298166093570907,
-    0.7318581965262908,
-    0.6854019684696455
-   ],
-   "group_overlap+preprocessing+test_selection": [
-    0.9205094473791142,
-    0.9170897596492601,
-    0.9422177237966712,
-    0.936088360946129,
-    0.941652292013641,
-    0.928896873094678
-   ],
-   "preprocessing+proposed_features+test_selection": [
-    0.7501764270118528,
-    0.7146361314722396,
-    0.7286065190268246,
-    0.7438396756082346,
-    0.7390844315346226,
-    0.7238152097629444
-   ],
-   "duplicates+group_overlap+proposed_features": [
-    0.7171227539420608,
-    0.7074148520379676,
-    0.7304055687761674,
-    0.7340977011494252,
-    0.7250933309770483,
-    0.6925309954465577
-   ],
-   "duplicates+group_overlap+test_selection": [
-    0.919449028236157,
-    0.9121412618648799,
-    0.9416951934946107,
-    0.9327637931034483,
-    0.9391487552188031,
-    0.9303585471703609
-   ],
-   "duplicates+proposed_features+test_selection": [
-    0.7252188651922065,
-    0.709775430050904,
-    0.7217790064946463,
-    0.718067074776198,
-    0.7200297305599438,
-    0.7166397884851676
-   ],
-   "group_overlap+proposed_features+test_selection": [
-    0.7001112352702153,
-    0.6886087841540749,
-    0.7060340755735492,
-    0.7182322600812754,
-    0.7247675271631375,
-    0.6784966466335686
-   ],
-   "duplicates+group_overlap+preprocessing+proposed_features": [
-    0.7146131279794645,
-    0.710569514237856,
-    0.7317672210839771,
-    0.733580459770115,
-    0.7255185667896352,
-    0.6931814871989047
-   ],
-   "duplicates+group_overlap+preprocessing+test_selection": [
-    0.9188892326732672,
-    0.9128866554997208,
-    0.9416920120639848,
-    0.9328724137931035,
-    0.9386638759415936,
-    0.9304129166302584
-   ],
-   "duplicates+preprocessing+proposed_features+test_selection": [
-    0.7254333421098823,
-    0.7102372959452343,
-    0.7207867079164472,
-    0.7180917588204319,
-    0.7192617825171143,
-    0.7175196375285238
-   ],
-   "group_overlap+preprocessing+proposed_features+test_selection": [
-    0.7008898821617229,
-    0.6874706411962734,
-    0.7056168466036887,
-    0.7175534021048244,
-    0.723409370291062,
-    0.6788202247191011
-   ],
-   "duplicates+group_overlap+proposed_features+test_selection": [
-    0.7038475201686836,
-    0.6929318816303741,
-    0.7219270561586134,
-    0.7269235632183907,
-    0.720600742229782,
-    0.6888081437683862
-   ],
-   "duplicates+group_overlap+preprocessing+proposed_features+test_selection": [
-    0.7030694215254858,
-    0.6931479620323842,
-    0.7236679349970094,
-    0.7273735632183909,
-    0.7204836643177449,
-    0.6881775551218944
-   ]
-  },
-  "attribution": {
-   "preprocessing": {
-    "label": "Preprocessing fitted before the split",
-    "mean": -7.855432822133171e-05,
-    "lo": -0.0007591862261097798,
-    "hi": 0.0006020775696671163,
-    "per_seed": [
-     0.00016799583701234135,
-     -0.0004672505229956844,
-     -0.0006338457567885295,
-     6.009417945070187e-05,
-     0.000319682657332232,
-     8.199763666094835e-05
+  "source": {
+    "kind": "notebook",
+    "code": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.ensemble import RandomForestClassifier\nfrom sklearn.metrics import roc_auc_score\n\ndf = pd.read_csv(\"hospital_readmissions.csv\")\ndf.head()\n\nfeatures = [\"age\", \"sex_male\", \"comorbidity_index\", \"hba1c\", \"num_prior_admissions\",\n            \"length_of_stay\", \"num_medications\", \"num_diagnoses\", \"emergency_admission\",\n            \"followup_ed_visits_30d\"]\nX = df[features]\ny = df[\"readmitted_30d\"]\n\nscaler = StandardScaler()\nX_scaled = scaler.fit_transform(X)\n\nX_train, X_test, y_train, y_test = train_test_split(\n    X_scaled, y, test_size=0.25, random_state=42, stratify=y)\n\nbest_auc, best_seed = 0, None\nfor seed in range(10):\n    model = RandomForestClassifier(n_estimators=100, random_state=seed, n_jobs=-1)\n    model.fit(X_train, y_train)\n    auc = roc_auc_score(y_test, model.predict_proba(X_test)[:, 1])\n    if auc > best_auc:\n        best_auc, best_seed = auc, seed\nprint(f\"Test AUC: {best_auc:.3f} (seed {best_seed})\")\n",
+    "line_map": [
+      [
+        1,
+        1
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        3
+      ],
+      [
+        1,
+        4
+      ],
+      [
+        1,
+        5
+      ],
+      [
+        1,
+        6
+      ],
+      [
+        1,
+        7
+      ],
+      [
+        2,
+        1
+      ],
+      [
+        2,
+        2
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        3,
+        1
+      ],
+      [
+        3,
+        2
+      ],
+      [
+        3,
+        3
+      ],
+      [
+        3,
+        4
+      ],
+      [
+        3,
+        5
+      ],
+      [
+        3,
+        6
+      ],
+      [
+        4,
+        1
+      ],
+      [
+        4,
+        2
+      ],
+      [
+        4,
+        3
+      ],
+      [
+        5,
+        1
+      ],
+      [
+        5,
+        2
+      ],
+      [
+        5,
+        3
+      ],
+      [
+        6,
+        1
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        3
+      ],
+      [
+        6,
+        4
+      ],
+      [
+        6,
+        5
+      ],
+      [
+        6,
+        6
+      ],
+      [
+        6,
+        7
+      ],
+      [
+        6,
+        8
+      ],
+      [
+        6,
+        9
+      ]
     ],
-    "status": "negligible",
-    "changes_test_population": false,
-    "alone": -0.00017220316074029185,
-    "last": -0.00014686567311326484,
-    "last_lo": -0.0017800010980024649,
-    "last_hi": 0.001486269751775935
-   },
-   "duplicates": {
-    "label": "Duplicate rows across train and test",
-    "mean": 0.0032559318193754665,
-    "lo": -0.009096444280774482,
-    "hi": 0.015608307919525416,
-    "per_seed": [
-     0.006561631282329006,
-     0.0012992646210753446,
-     0.001444944951044982,
-     0.0045033322599819375,
-     0.013315430447348137,
-     -0.00758901264552661
-    ],
-    "status": "uncertain",
-    "changes_test_population": true,
-    "alone": 0.00865884886981444,
-    "last": -0.007026622356039495,
-    "last_lo": -0.019905115368505505,
-    "last_hi": 0.005851870656426515
-   },
-   "group_overlap": {
-    "label": "Same patient in train and test",
-    "mean": 0.010115112023245816,
-    "lo": -0.010866371618161069,
-    "hi": 0.0310965956646527,
-    "per_seed": [
-     0.02147557135230035,
-     0.017360535876149507,
-     -0.005126438158764695,
-     0.0032318663208890713,
-     0.0013772398030993023,
-     0.022371896945801356
-    ],
-    "status": "uncertain",
-    "changes_test_population": true,
-    "alone": 0.006568664917555848,
-    "last": 0.00923507060412069,
-    "last_lo": -0.018906590309582104,
-    "last_hi": 0.03737673151782349
-   },
-   "proposed_features": {
-    "label": "Proposed leak (suspected, not confirmed)",
-    "mean": 0.212752591327392,
-    "lo": 0.1937157893419627,
-    "hi": 0.23178939331282128,
-    "per_seed": [
-     0.20132375517988366,
-     0.2177487230735696,
-     0.210904093705214,
-     0.2060045949188051,
-     0.20911470714539876,
-     0.2314196739414808
-    ],
-    "status": "material",
-    "changes_test_population": false,
-    "alone": 0.201044753327095,
-    "last": 0.21991616756483645,
-    "last_lo": 0.19830963604523072,
-    "last_hi": 0.24152269908444218
-   },
-   "test_selection": {
-    "label": "Model chosen using the test set",
-    "mean": 0.005687810898248195,
-    "lo": 0.0032663358613129615,
-    "hi": 0.008109285935183428,
-    "per_seed": [
-     0.006383221828603309,
-     0.008113470783822095,
-     0.005371819307824408,
-     0.004889594954010772,
-     0.004537357350848324,
-     0.0048314011643802645
-    ],
-    "status": "real",
-    "changes_test_population": false,
-    "alone": 0.0030410103451861126,
-    "last": 0.008885045974507158,
-    "last_lo": 0.0002087571698363381,
-    "last_hi": 0.017561334779177977
-   }
-  },
-  "original": {
-   "mean": 0.9410529086088584,
-   "lo": 0.9306696420459277,
-   "hi": 0.9502998512883067,
-   "sd": 0.00533417814331157,
-   "values": [
-    0.9389815970056145,
-    0.937202705864005,
-    0.9356285090455396,
-    0.9460630458515285,
-    0.9491480817217717,
-    0.9392935121646911
-   ]
-  },
-  "corrected": {
-   "mean": 0.7093200168688183,
-   "lo": 0.6787627852148506,
-   "hi": 0.73853482490641,
-   "sd": 0.01675726292251948,
-   "values": [
-    0.7030694215254858,
-    0.6931479620323842,
-    0.7236679349970094,
-    0.7273735632183909,
-    0.7204836643177449,
-    0.6881775551218944
-   ]
-  },
-  "inflation": {
-   "mean": 0.2317328917400401,
-   "lo": 0.20501319551947345,
-   "hi": 0.25845258796060677,
-   "lo_one_sided": 0.21078764126841776,
-   "values": [
-    0.23591217548012866,
-    0.24405474383162085,
-    0.2119605740485302,
-    0.2186894826331376,
-    0.22866441740402677,
-    0.25111595704279677
-   ],
-   "from_reported": 0.22966158013679616
-  },
-  "waterfall": [
-   {
-    "label": "Reported in notebook",
-    "value": 0.9389815970056145
-   },
-   {
-    "label": "Favourable split (luck of one seed)",
-    "delta": 0.0020713116032439194
-   },
-   {
-    "label": "Proposed leak (suspected, not confirmed)",
-    "delta": -0.212752591327392,
-    "fix": "proposed_features"
-   },
-   {
-    "label": "Same patient in train and test",
-    "delta": -0.010115112023245816,
-    "fix": "group_overlap"
-   },
-   {
-    "label": "Model chosen using the test set",
-    "delta": -0.005687810898248195,
-    "fix": "test_selection"
-   },
-   {
-    "label": "Duplicate rows across train and test",
-    "delta": -0.0032559318193754665,
-    "fix": "duplicates"
-   },
-   {
-    "label": "Preprocessing fitted before the split",
-    "delta": 7.855432822133171e-05,
-    "fix": "preprocessing"
-   },
-   {
-    "label": "Verified estimate",
-    "value": 0.7093200168688183
-   }
-  ],
-  "seconds": 227.2,
-  "runs": 96,
-  "n_train": 1952,
-  "n_test": 620,
-  "legit_scenario": {
-   "corrected": {
-    "mean": 0.9292361844336546,
-    "lo": 0.9075371164935697,
-    "hi": 0.9471787132827355,
-    "sd": 0.011251687685282835,
-    "values": [
-     0.9188892326732672,
-     0.9128866554997208,
-     0.9416920120639848,
-     0.9328724137931035,
-     0.9386638759415936,
-     0.9304129166302584
+    "cells": [
+      {
+        "type": "markdown",
+        "source": "# Predicting 30-day hospital readmission\n\nRandom forest model on 2,700 discharge encounters (synthetic, non-identifiable data)."
+      },
+      {
+        "type": "code",
+        "source": "import pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.ensemble import RandomForestClassifier\nfrom sklearn.metrics import roc_auc_score"
+      },
+      {
+        "type": "code",
+        "source": "df = pd.read_csv(\"hospital_readmissions.csv\")\ndf.head()"
+      },
+      {
+        "type": "code",
+        "source": "features = [\"age\", \"sex_male\", \"comorbidity_index\", \"hba1c\", \"num_prior_admissions\",\n            \"length_of_stay\", \"num_medications\", \"num_diagnoses\", \"emergency_admission\",\n            \"followup_ed_visits_30d\"]\nX = df[features]\ny = df[\"readmitted_30d\"]"
+      },
+      {
+        "type": "code",
+        "source": "scaler = StandardScaler()\nX_scaled = scaler.fit_transform(X)"
+      },
+      {
+        "type": "code",
+        "source": "X_train, X_test, y_train, y_test = train_test_split(\n    X_scaled, y, test_size=0.25, random_state=42, stratify=y)"
+      },
+      {
+        "type": "code",
+        "source": "best_auc, best_seed = 0, None\nfor seed in range(10):\n    model = RandomForestClassifier(n_estimators=100, random_state=seed, n_jobs=-1)\n    model.fit(X_train, y_train)\n    auc = roc_auc_score(y_test, model.predict_proba(X_test)[:, 1])\n    if auc > best_auc:\n        best_auc, best_seed = auc, seed\nprint(f\"Test AUC: {best_auc:.3f} (seed {best_seed})\")"
+      },
+      {
+        "type": "markdown",
+        "source": "## Result\n\nOur random forest predicts 30-day readmission with a test **AUC of 0.94**, which supports deploying it at discharge for all adult patients."
+      }
     ]
-   },
-   "inflation": {
-    "mean": 0.011816724175203686,
-    "lo": -0.007059362129941935,
-    "hi": 0.030692810480349306,
-    "lo_one_sided": -0.0029800142428370157,
-    "values": [
-     0.02009236433234729,
-     0.024316050364284192,
-     -0.00606350301844516,
-     0.013190632058424967,
-     0.010484205780178057,
-     0.008880595534432767
+  },
+  "data": {
+    "rows": 2726,
+    "columns": [
+      "encounter_id",
+      "patient_id",
+      "admit_date",
+      "age",
+      "age_group",
+      "sex_male",
+      "comorbidity_index",
+      "hba1c",
+      "num_prior_admissions",
+      "length_of_stay",
+      "num_medications",
+      "num_diagnoses",
+      "emergency_admission",
+      "followup_ed_visits_30d",
+      "readmitted_30d"
+    ]
+  },
+  "reproduction": {
+    "ok": true,
+    "seconds": 5.0,
+    "stdout": "Test AUC: 0.939 (seed 8)\n",
+    "error": null,
+    "metrics": [
+      {
+        "name": "roc_auc_score",
+        "value": 0.933440229257642,
+        "line": 27,
+        "where": "cell 7, line 5"
+      },
+      {
+        "name": "roc_auc_score",
+        "value": 0.9352532361197754,
+        "line": 27,
+        "where": "cell 7, line 5"
+      },
+      {
+        "name": "roc_auc_score",
+        "value": 0.9345757953836556,
+        "line": 27,
+        "where": "cell 7, line 5"
+      },
+      {
+        "name": "roc_auc_score",
+        "value": 0.9324118839675607,
+        "line": 27,
+        "where": "cell 7, line 5"
+      },
+      {
+        "name": "roc_auc_score",
+        "value": 0.9372709373050532,
+        "line": 27,
+        "where": "cell 7, line 5"
+      },
+      {
+        "name": "roc_auc_score",
+        "value": 0.933839870555209,
+        "line": 27,
+        "where": "cell 7, line 5"
+      },
+      {
+        "name": "roc_auc_score",
+        "value": 0.9347512476606364,
+        "line": 27,
+        "where": "cell 7, line 5"
+      },
+      {
+        "name": "roc_auc_score",
+        "value": 0.9338886072988147,
+        "line": 27,
+        "where": "cell 7, line 5"
+      },
+      {
+        "name": "roc_auc_score",
+        "value": 0.9389815970056145,
+        "line": 27,
+        "where": "cell 7, line 5"
+      },
+      {
+        "name": "roc_auc_score",
+        "value": 0.9319196428571429,
+        "line": 27,
+        "where": "cell 7, line 5"
+      }
+    ]
+  },
+  "trace": [
+    {
+      "type": "load",
+      "seq": 1,
+      "path": "hospital_readmissions.csv",
+      "requested": "hospital_readmissions.csv",
+      "shape": [
+        2726,
+        15
+      ],
+      "columns": [
+        "encounter_id",
+        "patient_id",
+        "admit_date",
+        "age",
+        "age_group",
+        "sex_male",
+        "comorbidity_index",
+        "hba1c",
+        "num_prior_admissions",
+        "length_of_stay",
+        "num_medications",
+        "num_diagnoses",
+        "emergency_admission",
+        "followup_ed_visits_30d",
+        "readmitted_30d"
+      ],
+      "line": 8,
+      "index_col": null,
+      "where": "cell 3, line 1"
+    },
+    {
+      "type": "fit",
+      "seq": 2,
+      "method": "fit_transform",
+      "class": "StandardScaler",
+      "module": "sklearn.preprocessing._data",
+      "kind": "transformer",
+      "params": {
+        "copy": true,
+        "with_mean": true,
+        "with_std": true
+      },
+      "n_rows": 2726,
+      "n_cols": 10,
+      "columns": [
+        "age",
+        "sex_male",
+        "comorbidity_index",
+        "hba1c",
+        "num_prior_admissions",
+        "length_of_stay",
+        "num_medications",
+        "num_diagnoses",
+        "emergency_admission",
+        "followup_ed_visits_30d"
+      ],
+      "line": 18,
+      "has_y": false,
+      "y_hash": null,
+      "where": "cell 5, line 2"
+    },
+    {
+      "type": "split",
+      "seq": 3,
+      "n": 2726,
+      "n_arrays": 2,
+      "line": 20,
+      "test_size": 0.25,
+      "train_size": null,
+      "random_state": 42,
+      "shuffle": true,
+      "stratified": true,
+      "input_columns": null,
+      "test_rows_duplicated_in_train": 60,
+      "y_hash_test": "249f21b514cd5e8c",
+      "y_hash_train": "8a7949f2035c44ee",
+      "where": "cell 6, line 1"
+    },
+    {
+      "type": "fit",
+      "seq": 4,
+      "method": "fit",
+      "class": "RandomForestClassifier",
+      "module": "sklearn.ensemble._forest",
+      "kind": "model",
+      "params": {
+        "bootstrap": true,
+        "ccp_alpha": 0.0,
+        "class_weight": null,
+        "criterion": "gini",
+        "max_depth": null,
+        "max_features": "sqrt",
+        "max_leaf_nodes": null,
+        "max_samples": null,
+        "min_impurity_decrease": 0.0,
+        "min_samples_leaf": 1,
+        "min_samples_split": 2,
+        "min_weight_fraction_leaf": 0.0,
+        "monotonic_cst": null,
+        "n_estimators": 100,
+        "n_jobs": -1,
+        "oob_score": false,
+        "random_state": 0,
+        "verbose": 0,
+        "warm_start": false
+      },
+      "n_rows": 2044,
+      "n_cols": 10,
+      "columns": null,
+      "line": 26,
+      "has_y": true,
+      "y_hash": "8a7949f2035c44ee",
+      "rows_in_test": 60,
+      "rows_in_train": 2044,
+      "where": "cell 7, line 4"
+    },
+    {
+      "type": "predict",
+      "seq": 5,
+      "method": "predict_proba",
+      "class": "RandomForestClassifier",
+      "n_rows": 682,
+      "line": 27,
+      "rows_in_test": 682,
+      "rows_in_train": 60,
+      "where": "cell 7, line 5"
+    },
+    {
+      "type": "metric",
+      "seq": 6,
+      "name": "roc_auc_score",
+      "value": 0.933440229257642,
+      "n": 682,
+      "y_hash": "249f21b514cd5e8c",
+      "line": 27,
+      "where": "cell 7, line 5"
+    },
+    {
+      "type": "fit",
+      "seq": 7,
+      "method": "fit",
+      "class": "RandomForestClassifier",
+      "module": "sklearn.ensemble._forest",
+      "kind": "model",
+      "params": {
+        "bootstrap": true,
+        "ccp_alpha": 0.0,
+        "class_weight": null,
+        "criterion": "gini",
+        "max_depth": null,
+        "max_features": "sqrt",
+        "max_leaf_nodes": null,
+        "max_samples": null,
+        "min_impurity_decrease": 0.0,
+        "min_samples_leaf": 1,
+        "min_samples_split": 2,
+        "min_weight_fraction_leaf": 0.0,
+        "monotonic_cst": null,
+        "n_estimators": 100,
+        "n_jobs": -1,
+        "oob_score": false,
+        "random_state": 1,
+        "verbose": 0,
+        "warm_start": false
+      },
+      "n_rows": 2044,
+      "n_cols": 10,
+      "columns": null,
+      "line": 26,
+      "has_y": true,
+      "y_hash": "8a7949f2035c44ee",
+      "rows_in_test": 60,
+      "rows_in_train": 2044,
+      "where": "cell 7, line 4"
+    },
+    {
+      "type": "predict",
+      "seq": 8,
+      "method": "predict_proba",
+      "class": "RandomForestClassifier",
+      "n_rows": 682,
+      "line": 27,
+      "rows_in_test": 682,
+      "rows_in_train": 60,
+      "where": "cell 7, line 5"
+    },
+    {
+      "type": "metric",
+      "seq": 9,
+      "name": "roc_auc_score",
+      "value": 0.9352532361197754,
+      "n": 682,
+      "y_hash": "249f21b514cd5e8c",
+      "line": 27,
+      "where": "cell 7, line 5"
+    },
+    {
+      "type": "fit",
+      "seq": 10,
+      "method": "fit",
+      "class": "RandomForestClassifier",
+      "module": "sklearn.ensemble._forest",
+      "kind": "model",
+      "params": {
+        "bootstrap": true,
+        "ccp_alpha": 0.0,
+        "class_weight": null,
+        "criterion": "gini",
+        "max_depth": null,
+        "max_features": "sqrt",
+        "max_leaf_nodes": null,
+        "max_samples": null,
+        "min_impurity_decrease": 0.0,
+        "min_samples_leaf": 1,
+        "min_samples_split": 2,
+        "min_weight_fraction_leaf": 0.0,
+        "monotonic_cst": null,
+        "n_estimators": 100,
+        "n_jobs": -1,
+        "oob_score": false,
+        "random_state": 2,
+        "verbose": 0,
+        "warm_start": false
+      },
+      "n_rows": 2044,
+      "n_cols": 10,
+      "columns": null,
+      "line": 26,
+      "has_y": true,
+      "y_hash": "8a7949f2035c44ee",
+      "rows_in_test": 60,
+      "rows_in_train": 2044,
+      "where": "cell 7, line 4"
+    },
+    {
+      "type": "predict",
+      "seq": 11,
+      "method": "predict_proba",
+      "class": "RandomForestClassifier",
+      "n_rows": 682,
+      "line": 27,
+      "rows_in_test": 682,
+      "rows_in_train": 60,
+      "where": "cell 7, line 5"
+    },
+    {
+      "type": "metric",
+      "seq": 12,
+      "name": "roc_auc_score",
+      "value": 0.9345757953836556,
+      "n": 682,
+      "y_hash": "249f21b514cd5e8c",
+      "line": 27,
+      "where": "cell 7, line 5"
+    },
+    {
+      "type": "fit",
+      "seq": 13,
+      "method": "fit",
+      "class": "RandomForestClassifier",
+      "module": "sklearn.ensemble._forest",
+      "kind": "model",
+      "params": {
+        "bootstrap": true,
+        "ccp_alpha": 0.0,
+        "class_weight": null,
+        "criterion": "gini",
+        "max_depth": null,
+        "max_features": "sqrt",
+        "max_leaf_nodes": null,
+        "max_samples": null,
+        "min_impurity_decrease": 0.0,
+        "min_samples_leaf": 1,
+        "min_samples_split": 2,
+        "min_weight_fraction_leaf": 0.0,
+        "monotonic_cst": null,
+        "n_estimators": 100,
+        "n_jobs": -1,
+        "oob_score": false,
+        "random_state": 3,
+        "verbose": 0,
+        "warm_start": false
+      },
+      "n_rows": 2044,
+      "n_cols": 10,
+      "columns": null,
+      "line": 26,
+      "has_y": true,
+      "y_hash": "8a7949f2035c44ee",
+      "rows_in_test": 60,
+      "rows_in_train": 2044,
+      "where": "cell 7, line 4"
+    },
+    {
+      "type": "predict",
+      "seq": 14,
+      "method": "predict_proba",
+      "class": "RandomForestClassifier",
+      "n_rows": 682,
+      "line": 27,
+      "rows_in_test": 682,
+      "rows_in_train": 60,
+      "where": "cell 7, line 5"
+    },
+    {
+      "type": "metric",
+      "seq": 15,
+      "name": "roc_auc_score",
+      "value": 0.9324118839675607,
+      "n": 682,
+      "y_hash": "249f21b514cd5e8c",
+      "line": 27,
+      "where": "cell 7, line 5"
+    },
+    {
+      "type": "fit",
+      "seq": 16,
+      "method": "fit",
+      "class": "RandomForestClassifier",
+      "module": "sklearn.ensemble._forest",
+      "kind": "model",
+      "params": {
+        "bootstrap": true,
+        "ccp_alpha": 0.0,
+        "class_weight": null,
+        "criterion": "gini",
+        "max_depth": null,
+        "max_features": "sqrt",
+        "max_leaf_nodes": null,
+        "max_samples": null,
+        "min_impurity_decrease": 0.0,
+        "min_samples_leaf": 1,
+        "min_samples_split": 2,
+        "min_weight_fraction_leaf": 0.0,
+        "monotonic_cst": null,
+        "n_estimators": 100,
+        "n_jobs": -1,
+        "oob_score": false,
+        "random_state": 4,
+        "verbose": 0,
+        "warm_start": false
+      },
+      "n_rows": 2044,
+      "n_cols": 10,
+      "columns": null,
+      "line": 26,
+      "has_y": true,
+      "y_hash": "8a7949f2035c44ee",
+      "rows_in_test": 60,
+      "rows_in_train": 2044,
+      "where": "cell 7, line 4"
+    },
+    {
+      "type": "predict",
+      "seq": 17,
+      "method": "predict_proba",
+      "class": "RandomForestClassifier",
+      "n_rows": 682,
+      "line": 27,
+      "rows_in_test": 682,
+      "rows_in_train": 60,
+      "where": "cell 7, line 5"
+    },
+    {
+      "type": "metric",
+      "seq": 18,
+      "name": "roc_auc_score",
+      "value": 0.9372709373050532,
+      "n": 682,
+      "y_hash": "249f21b514cd5e8c",
+      "line": 27,
+      "where": "cell 7, line 5"
+    },
+    {
+      "type": "fit",
+      "seq": 19,
+      "method": "fit",
+      "class": "RandomForestClassifier",
+      "module": "sklearn.ensemble._forest",
+      "kind": "model",
+      "params": {
+        "bootstrap": true,
+        "ccp_alpha": 0.0,
+        "class_weight": null,
+        "criterion": "gini",
+        "max_depth": null,
+        "max_features": "sqrt",
+        "max_leaf_nodes": null,
+        "max_samples": null,
+        "min_impurity_decrease": 0.0,
+        "min_samples_leaf": 1,
+        "min_samples_split": 2,
+        "min_weight_fraction_leaf": 0.0,
+        "monotonic_cst": null,
+        "n_estimators": 100,
+        "n_jobs": -1,
+        "oob_score": false,
+        "random_state": 5,
+        "verbose": 0,
+        "warm_start": false
+      },
+      "n_rows": 2044,
+      "n_cols": 10,
+      "columns": null,
+      "line": 26,
+      "has_y": true,
+      "y_hash": "8a7949f2035c44ee",
+      "rows_in_test": 60,
+      "rows_in_train": 2044,
+      "where": "cell 7, line 4"
+    },
+    {
+      "type": "predict",
+      "seq": 20,
+      "method": "predict_proba",
+      "class": "RandomForestClassifier",
+      "n_rows": 682,
+      "line": 27,
+      "rows_in_test": 682,
+      "rows_in_train": 60,
+      "where": "cell 7, line 5"
+    },
+    {
+      "type": "metric",
+      "seq": 21,
+      "name": "roc_auc_score",
+      "value": 0.933839870555209,
+      "n": 682,
+      "y_hash": "249f21b514cd5e8c",
+      "line": 27,
+      "where": "cell 7, line 5"
+    },
+    {
+      "type": "fit",
+      "seq": 22,
+      "method": "fit",
+      "class": "RandomForestClassifier",
+      "module": "sklearn.ensemble._forest",
+      "kind": "model",
+      "params": {
+        "bootstrap": true,
+        "ccp_alpha": 0.0,
+        "class_weight": null,
+        "criterion": "gini",
+        "max_depth": null,
+        "max_features": "sqrt",
+        "max_leaf_nodes": null,
+        "max_samples": null,
+        "min_impurity_decrease": 0.0,
+        "min_samples_leaf": 1,
+        "min_samples_split": 2,
+        "min_weight_fraction_leaf": 0.0,
+        "monotonic_cst": null,
+        "n_estimators": 100,
+        "n_jobs": -1,
+        "oob_score": false,
+        "random_state": 6,
+        "verbose": 0,
+        "warm_start": false
+      },
+      "n_rows": 2044,
+      "n_cols": 10,
+      "columns": null,
+      "line": 26,
+      "has_y": true,
+      "y_hash": "8a7949f2035c44ee",
+      "rows_in_test": 60,
+      "rows_in_train": 2044,
+      "where": "cell 7, line 4"
+    },
+    {
+      "type": "predict",
+      "seq": 23,
+      "method": "predict_proba",
+      "class": "RandomForestClassifier",
+      "n_rows": 682,
+      "line": 27,
+      "rows_in_test": 682,
+      "rows_in_train": 60,
+      "where": "cell 7, line 5"
+    },
+    {
+      "type": "metric",
+      "seq": 24,
+      "name": "roc_auc_score",
+      "value": 0.9347512476606364,
+      "n": 682,
+      "y_hash": "249f21b514cd5e8c",
+      "line": 27,
+      "where": "cell 7, line 5"
+    },
+    {
+      "type": "fit",
+      "seq": 25,
+      "method": "fit",
+      "class": "RandomForestClassifier",
+      "module": "sklearn.ensemble._forest",
+      "kind": "model",
+      "params": {
+        "bootstrap": true,
+        "ccp_alpha": 0.0,
+        "class_weight": null,
+        "criterion": "gini",
+        "max_depth": null,
+        "max_features": "sqrt",
+        "max_leaf_nodes": null,
+        "max_samples": null,
+        "min_impurity_decrease": 0.0,
+        "min_samples_leaf": 1,
+        "min_samples_split": 2,
+        "min_weight_fraction_leaf": 0.0,
+        "monotonic_cst": null,
+        "n_estimators": 100,
+        "n_jobs": -1,
+        "oob_score": false,
+        "random_state": 7,
+        "verbose": 0,
+        "warm_start": false
+      },
+      "n_rows": 2044,
+      "n_cols": 10,
+      "columns": null,
+      "line": 26,
+      "has_y": true,
+      "y_hash": "8a7949f2035c44ee",
+      "rows_in_test": 60,
+      "rows_in_train": 2044,
+      "where": "cell 7, line 4"
+    },
+    {
+      "type": "predict",
+      "seq": 26,
+      "method": "predict_proba",
+      "class": "RandomForestClassifier",
+      "n_rows": 682,
+      "line": 27,
+      "rows_in_test": 682,
+      "rows_in_train": 60,
+      "where": "cell 7, line 5"
+    },
+    {
+      "type": "metric",
+      "seq": 27,
+      "name": "roc_auc_score",
+      "value": 0.9338886072988147,
+      "n": 682,
+      "y_hash": "249f21b514cd5e8c",
+      "line": 27,
+      "where": "cell 7, line 5"
+    },
+    {
+      "type": "fit",
+      "seq": 28,
+      "method": "fit",
+      "class": "RandomForestClassifier",
+      "module": "sklearn.ensemble._forest",
+      "kind": "model",
+      "params": {
+        "bootstrap": true,
+        "ccp_alpha": 0.0,
+        "class_weight": null,
+        "criterion": "gini",
+        "max_depth": null,
+        "max_features": "sqrt",
+        "max_leaf_nodes": null,
+        "max_samples": null,
+        "min_impurity_decrease": 0.0,
+        "min_samples_leaf": 1,
+        "min_samples_split": 2,
+        "min_weight_fraction_leaf": 0.0,
+        "monotonic_cst": null,
+        "n_estimators": 100,
+        "n_jobs": -1,
+        "oob_score": false,
+        "random_state": 8,
+        "verbose": 0,
+        "warm_start": false
+      },
+      "n_rows": 2044,
+      "n_cols": 10,
+      "columns": null,
+      "line": 26,
+      "has_y": true,
+      "y_hash": "8a7949f2035c44ee",
+      "rows_in_test": 60,
+      "rows_in_train": 2044,
+      "where": "cell 7, line 4"
+    },
+    {
+      "type": "predict",
+      "seq": 29,
+      "method": "predict_proba",
+      "class": "RandomForestClassifier",
+      "n_rows": 682,
+      "line": 27,
+      "rows_in_test": 682,
+      "rows_in_train": 60,
+      "where": "cell 7, line 5"
+    },
+    {
+      "type": "metric",
+      "seq": 30,
+      "name": "roc_auc_score",
+      "value": 0.9389815970056145,
+      "n": 682,
+      "y_hash": "249f21b514cd5e8c",
+      "line": 27,
+      "where": "cell 7, line 5"
+    },
+    {
+      "type": "fit",
+      "seq": 31,
+      "method": "fit",
+      "class": "RandomForestClassifier",
+      "module": "sklearn.ensemble._forest",
+      "kind": "model",
+      "params": {
+        "bootstrap": true,
+        "ccp_alpha": 0.0,
+        "class_weight": null,
+        "criterion": "gini",
+        "max_depth": null,
+        "max_features": "sqrt",
+        "max_leaf_nodes": null,
+        "max_samples": null,
+        "min_impurity_decrease": 0.0,
+        "min_samples_leaf": 1,
+        "min_samples_split": 2,
+        "min_weight_fraction_leaf": 0.0,
+        "monotonic_cst": null,
+        "n_estimators": 100,
+        "n_jobs": -1,
+        "oob_score": false,
+        "random_state": 9,
+        "verbose": 0,
+        "warm_start": false
+      },
+      "n_rows": 2044,
+      "n_cols": 10,
+      "columns": null,
+      "line": 26,
+      "has_y": true,
+      "y_hash": "8a7949f2035c44ee",
+      "rows_in_test": 60,
+      "rows_in_train": 2044,
+      "where": "cell 7, line 4"
+    },
+    {
+      "type": "predict",
+      "seq": 32,
+      "method": "predict_proba",
+      "class": "RandomForestClassifier",
+      "n_rows": 682,
+      "line": 27,
+      "rows_in_test": 682,
+      "rows_in_train": 60,
+      "where": "cell 7, line 5"
+    },
+    {
+      "type": "metric",
+      "seq": 33,
+      "name": "roc_auc_score",
+      "value": 0.9319196428571429,
+      "n": 682,
+      "y_hash": "249f21b514cd5e8c",
+      "line": 27,
+      "where": "cell 7, line 5"
+    }
+  ],
+  "roles": {
+    "target": "readmitted_30d",
+    "group": "patient_id",
+    "date": "admit_date",
+    "subgroup": "age_group",
+    "auto": {
+      "group": true,
+      "date": true,
+      "subgroup": true
+    }
+  },
+  "claim": {
+    "text": "Our random forest predicts 30-day readmission with a test AUC of 0.94, which supports deploying it at discharge for all adult patients.",
+    "metric": "roc_auc_score",
+    "value": 0.94,
+    "general": true,
+    "source": "notebook text"
+  },
+  "protocol": {
+    "supported": true,
+    "metric": "roc_auc_score",
+    "metric_label": "AUC",
+    "reported": 0.9389815970056145,
+    "reported_where": "cell 7, line 5",
+    "split": {
+      "type": "split",
+      "seq": 3,
+      "n": 2726,
+      "n_arrays": 2,
+      "line": 20,
+      "test_size": 0.25,
+      "train_size": null,
+      "random_state": 42,
+      "shuffle": true,
+      "stratified": true,
+      "test_rows_duplicated_in_train": 60,
+      "y_hash_test": "249f21b514cd5e8c",
+      "y_hash_train": "8a7949f2035c44ee",
+      "where": "cell 6, line 1"
+    },
+    "pre_split_steps": [
+      {
+        "class": "StandardScaler",
+        "kind": "transformer",
+        "where": "cell 5, line 2",
+        "line": 18
+      }
     ],
-    "from_reported": 0.009745412571959822
-   }
+    "post_split_steps": [],
+    "model": "RandomForestClassifier",
+    "model_params": {
+      "bootstrap": true,
+      "ccp_alpha": 0.0,
+      "class_weight": null,
+      "criterion": "gini",
+      "max_depth": null,
+      "max_features": "sqrt",
+      "max_leaf_nodes": null,
+      "max_samples": null,
+      "min_impurity_decrease": 0.0,
+      "min_samples_leaf": 1,
+      "min_samples_split": 2,
+      "min_weight_fraction_leaf": 0.0,
+      "monotonic_cst": null,
+      "n_estimators": 100,
+      "n_jobs": -1,
+      "oob_score": false,
+      "random_state": 0,
+      "verbose": 0,
+      "warm_start": false
+    },
+    "candidates": 10,
+    "selection": "seed",
+    "features": [
+      "age",
+      "sex_male",
+      "comorbidity_index",
+      "hba1c",
+      "num_prior_admissions",
+      "length_of_stay",
+      "num_medications",
+      "num_diagnoses",
+      "emergency_admission",
+      "followup_ed_visits_30d"
+    ],
+    "n_train": 2044,
+    "n_test": 682,
+    "prevalence": 0.32831988261188555,
+    "flow": [
+      "Load data",
+      "Fit StandardScaler (all rows)",
+      "Split (train_test_split)",
+      "Fit RandomForestClassifier ×10",
+      "Evaluate on test → keep best"
+    ]
   },
-  "proposed": [
-   "followup_ed_visits_30d"
-  ]
- },
- "repair": {
-  "ok": true,
-  "code": "from sklearn.ensemble import RandomForestClassifier\nfrom sklearn.metrics import roc_auc_score\nfrom sklearn.model_selection import GroupShuffleSplit\nfrom sklearn.pipeline import make_pipeline\nfrom sklearn.preprocessing import StandardScaler\nimport numpy as np\nimport pandas as pd\n\nimport pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.ensemble import RandomForestClassifier\nfrom sklearn.metrics import roc_auc_score\n\ndf = pd.read_csv(\"hospital_readmissions.csv\")\ndf.head()\n\nfeatures = [\"age\", \"sex_male\", \"comorbidity_index\", \"hba1c\", \"num_prior_admissions\",\n            \"length_of_stay\", \"num_medications\", \"num_diagnoses\", \"emergency_admission\",\n            \"followup_ed_visits_30d\"]\nX = df[features]\ny = df[\"readmitted_30d\"]\n\nscaler = StandardScaler()\n\n# ---- LeakVerity corrected protocol ------------------------------------\n# Generated from the original notebook. Every change below is marked with FIX.\n\nX_lv, y_lv = X, y\nX_lv = X_lv.drop(columns=['followup_ed_visits_30d'])  # PROPOSED FIX: suspected leak, confirm before relying on it\ndup = df.loc[X_lv.index].duplicated().to_numpy()  # same source record (all columns, IDs included)\nX_lv, y_lv = X_lv[~dup], y_lv[~dup]  # FIX: drop records exported more than once\ny_arr = np.asarray(y_lv)\ngroups = df.loc[X_lv.index, 'patient_id']  # FIX: keep each patient_id on one side of the split\ngss = GroupShuffleSplit(n_splits=1, test_size=0.25, random_state=42)\ntrain_idx, test_idx = next(gss.split(X_lv, y_arr, np.asarray(groups)))\ntake = lambda A, i: A.iloc[i] if hasattr(A, 'iloc') else A[i]\nX_train, X_test, y_train, y_test = take(X_lv, train_idx), take(X_lv, test_idx), y_arr[train_idx], y_arr[test_idx]\nCANDIDATES = [{'n_jobs': -1, 'random_state': 0}, {'n_jobs': -1, 'random_state': 1}, {'n_jobs': -1, 'random_state': 2}, {'n_jobs': -1, 'random_state': 3}, {'n_jobs': -1, 'random_state': 4}, {'n_jobs': -1, 'random_state': 5}, {'n_jobs': -1, 'random_state': 6}, {'n_jobs': -1, 'random_state': 7}, {'n_jobs': -1, 'random_state': 8}, {'n_jobs': -1, 'random_state': 9}]\n# FIX: preprocessing now lives inside the pipeline, so it is fitted on training rows only\nscores = []\nfor params in CANDIDATES:  # FIX: report the average over seeds, not the best test score\n    model = make_pipeline(StandardScaler(), RandomForestClassifier(**params))\n    model.fit(X_train, y_train)\n    scores.append(roc_auc_score(y_test, model.predict_proba(X_test)[:, 1]))\nresult = float(np.mean(scores))\nprint(f\"LeakVerity corrected result: {result:.6f}\")\n",
-  "diff": "--- original\n+++ corrected\n@@ -1,2 +1,10 @@\n+from sklearn.ensemble import RandomForestClassifier\n+from sklearn.metrics import roc_auc_score\n+from sklearn.model_selection import GroupShuffleSplit\n+from sklearn.pipeline import make_pipeline\n+from sklearn.preprocessing import StandardScaler\n+import numpy as np\n+import pandas as pd\n+\n import pandas as pd\n import numpy as np\n@@ -16,16 +24,26 @@\n \n scaler = StandardScaler()\n-X_scaled = scaler.fit_transform(X)\n \n-X_train, X_test, y_train, y_test = train_test_split(\n-    X_scaled, y, test_size=0.25, random_state=42, stratify=y)\n+# ---- LeakVerity corrected protocol ------------------------------------\n+# Generated from the original notebook. Every change below is marked with FIX.\n \n-best_auc, best_seed = 0, None\n-for seed in range(10):\n-    model = RandomForestClassifier(n_estimators=100, random_state=seed, n_jobs=-1)\n+X_lv, y_lv = X, y\n+X_lv = X_lv.drop(columns=['followup_ed_visits_30d'])  # PROPOSED FIX: suspected leak, confirm before relying on it\n+dup = df.loc[X_lv.index].duplicated().to_numpy()  # same source record (all columns, IDs included)\n+X_lv, y_lv = X_lv[~dup], y_lv[~dup]  # FIX: drop records exported more than once\n+y_arr = np.asarray(y_lv)\n+groups = df.loc[X_lv.index, 'patient_id']  # FIX: keep each patient_id on one side of the split\n+gss = GroupShuffleSplit(n_splits=1, test_size=0.25, random_state=42)\n+train_idx, test_idx = next(gss.split(X_lv, y_arr, np.asarray(groups)))\n+take = lambda A, i: A.iloc[i] if hasattr(A, 'iloc') else A[i]\n+X_train, X_test, y_train, y_test = take(X_lv, train_idx), take(X_lv, test_idx), y_arr[train_idx], y_arr[test_idx]\n+CANDIDATES = [{'n_jobs': -1, 'random_state': 0}, {'n_jobs': -1, 'random_state': 1}, {'n_jobs': -1, 'random_state': 2}, {'n_jobs': -1, 'random_state': 3}, {'n_jobs': -1, 'random_state': 4}, {'n_jobs': -1, 'random_state': 5}, {'n_jobs': -1, 'random_state': 6}, {'n_jobs': -1, 'random_state': 7}, {'n_jobs': -1, 'random_state': 8}, {'n_jobs': -1, 'random_state': 9}]\n+# FIX: preprocessing now lives inside the pipeline, so it is fitted on training rows only\n+scores = []\n+for params in CANDIDATES:  # FIX: report the average over seeds, not the best test score\n+    model = make_pipeline(StandardScaler(), RandomForestClassifier(**params))\n     model.fit(X_train, y_train)\n-    auc = roc_auc_score(y_test, model.predict_proba(X_test)[:, 1])\n-    if auc > best_auc:\n-        best_auc, best_seed = auc, seed\n-print(f\"Test AUC: {best_auc:.3f} (seed {best_seed})\")\n+    scores.append(roc_auc_score(y_test, model.predict_proba(X_test)[:, 1]))\n+result = float(np.mean(scores))\n+print(f\"LeakVerity corrected result: {result:.6f}\")\n \n",
-  "cut_line": 18,
-  "kept_lines": 17,
-  "verification": {
-   "ran": true,
-   "value": 0.703069,
-   "expected": 0.7030694215254858,
-   "error": null,
-   "checks": [
-    {
-     "check": "Corrected code reproduces the replay engine's number",
-     "ok": true,
-     "detail": "printed 0.703069, replay engine 0.703069"
+  "feature_audit": {
+    "flags": [
+      {
+        "column": "followup_ed_visits_30d",
+        "reason": "The name “followup_ed_visits_30d” suggests it is recorded after the prediction point or derived from the outcome, and on its own it separates the classes with AUC 0.90.",
+        "confidence": "high",
+        "auc": 0.9018282283088582,
+        "source": "rules",
+        "needs_review": false
+      }
+    ],
+    "source": "rules",
+    "prediction_point": null,
+    "columns": [
+      {
+        "column": "age",
+        "dtype": "int64",
+        "examples": "56, 69, 74, 70",
+        "auc": 0.5597786720935838
+      },
+      {
+        "column": "sex_male",
+        "dtype": "int64",
+        "examples": "1, 0",
+        "auc": 0.5022001592682205
+      },
+      {
+        "column": "comorbidity_index",
+        "dtype": "int64",
+        "examples": "1, 7, 3, 5",
+        "auc": 0.6645054599708924
+      },
+      {
+        "column": "hba1c",
+        "dtype": "float64",
+        "examples": "5.9, 6.8, 5.2, 6.3",
+        "auc": 0.6096158950904503
+      },
+      {
+        "column": "num_prior_admissions",
+        "dtype": "int64",
+        "examples": "4, 2, 0, 1",
+        "auc": 0.6479354628084296
+      },
+      {
+        "column": "length_of_stay",
+        "dtype": "int64",
+        "examples": "3, 7, 1, 6",
+        "auc": 0.6256397426079103
+      },
+      {
+        "column": "num_medications",
+        "dtype": "int64",
+        "examples": "13, 17, 7, 6",
+        "auc": 0.6420797622570932
+      },
+      {
+        "column": "num_diagnoses",
+        "dtype": "int64",
+        "examples": "7, 14, 9, 6",
+        "auc": 0.5892777704890022
+      },
+      {
+        "column": "emergency_admission",
+        "dtype": "int64",
+        "examples": "0, 1",
+        "auc": 0.5581078813360223
+      },
+      {
+        "column": "followup_ed_visits_30d",
+        "dtype": "int64",
+        "examples": "4, 0, 1, 2",
+        "auc": 0.9018282283088582
+      }
+    ],
+    "target": "readmitted_30d"
+  },
+  "replay": {
+    "fidelity_ok": true,
+    "fidelity_value": 0.9389815970056145,
+    "reported": 0.9389815970056145,
+    "fixes": [
+      "preprocessing",
+      "duplicates",
+      "group_overlap",
+      "proposed_features",
+      "test_selection"
+    ],
+    "seeds": [
+      42,
+      1000,
+      1001,
+      1002,
+      1003,
+      1004
+    ],
+    "table": {
+      "none": [
+        0.9389815970056145,
+        0.937202705864005,
+        0.9356285090455396,
+        0.9460630458515285,
+        0.9491480817217717,
+        0.9392935121646911
+      ],
+      "preprocessing": [
+        0.9394835854647536,
+        0.9376510839051778,
+        0.9358916874610107,
+        0.945185784466625,
+        0.9496500701809107,
+        0.9394884591391142
+      ],
+      "duplicates": [
+        0.9279664735825874,
+        0.9303416271721958,
+        0.917089038090223,
+        0.9384818764261891,
+        0.9257997630331753,
+        0.954685580129893
+      ],
+      "group_overlap": [
+        0.9245123933360423,
+        0.9205942221874266,
+        0.9450742240215925,
+        0.9396634364905699,
+        0.9432052502180982,
+        0.9338559358940858
+      ],
+      "proposed_features": [
+        0.7584558250155957,
+        0.7213086790393014,
+        0.7343262632563942,
+        0.7487377183406114,
+        0.7496539691203993,
+        0.7275664769182782
+      ],
+      "test_selection": [
+        0.9346333047411104,
+        0.9341147457891454,
+        0.9335035870243292,
+        0.9430028657205242,
+        0.9465367669993761,
+        0.9362801193075484
+      ],
+      "duplicates+preprocessing": [
+        0.9283285062313498,
+        0.9311808846761452,
+        0.9192283219238196,
+        0.9388932771634193,
+        0.9250921537651396,
+        0.9544442250307179
+      ],
+      "group_overlap+preprocessing": [
+        0.9248679398618447,
+        0.9203495654897047,
+        0.9463000449842556,
+        0.9392310096905282,
+        0.943577008486002,
+        0.9331199372876927
+      ],
+      "preprocessing+proposed_features": [
+        0.7565209762944479,
+        0.7222054351216469,
+        0.735632407985028,
+        0.7485378976918278,
+        0.7470270586400499,
+        0.7279222551466001
+      ],
+      "preprocessing+test_selection": [
+        0.9349057431378667,
+        0.9346264815970058,
+        0.9339090767311291,
+        0.9432031737367437,
+        0.9466293668122269,
+        0.9358024992202122
+      ],
+      "duplicates+group_overlap": [
+        0.9217833241657498,
+        0.9155834729201564,
+        0.9467619399091383,
+        0.9359655172413794,
+        0.9418476219929752,
+        0.935416848707269
+      ],
+      "duplicates+proposed_features": [
+        0.7322110321221695,
+        0.719468579954362,
+        0.7274003861681586,
+        0.7226665350184307,
+        0.7258315780235212,
+        0.7252994997367037
+      ],
+      "duplicates+test_selection": [
+        0.9264130243988065,
+        0.927100886431455,
+        0.913441833421099,
+        0.9358384895559066,
+        0.9219051693873969,
+        0.9512100667017729
+      ],
+      "group_overlap+proposed_features": [
+        0.7050386021942299,
+        0.6982012839583497,
+        0.7143556005398111,
+        0.7289517557570074,
+        0.7338706479498771,
+        0.6880803065935024
+      ],
+      "group_overlap+test_selection": [
+        0.9204576391710686,
+        0.9169180106474594,
+        0.9421839856050382,
+        0.9360315723663645,
+        0.9415313466571495,
+        0.9288263217489765
+      ],
+      "proposed_features+test_selection": [
+        0.7505044252963194,
+        0.7139913443543356,
+        0.7275338233000623,
+        0.7430379561759202,
+        0.7392457501559576,
+        0.7224734872114784
+      ],
+      "duplicates+group_overlap+preprocessing": [
+        0.920557159882655,
+        0.91643216080402,
+        0.9469019228566702,
+        0.9355747126436781,
+        0.9415217919547592,
+        0.9359605433062458
+      ],
+      "duplicates+preprocessing+proposed_features": [
+        0.7333519835000878,
+        0.7195837721607864,
+        0.7277020800421274,
+        0.7233522029138142,
+        0.7240707828681763,
+        0.7254037212568017
+      ],
+      "duplicates+preprocessing+test_selection": [
+        0.9266988107776024,
+        0.9274815692469719,
+        0.9134155037739161,
+        0.9362060075478322,
+        0.921728541337546,
+        0.9507684965771457
+      ],
+      "group_overlap+preprocessing+proposed_features": [
+        0.7062626980902073,
+        0.6982306427620762,
+        0.7122863247863248,
+        0.7298166093570907,
+        0.7318581965262908,
+        0.6854019684696455
+      ],
+      "group_overlap+preprocessing+test_selection": [
+        0.9205094473791142,
+        0.9170897596492601,
+        0.9422177237966712,
+        0.936088360946129,
+        0.941652292013641,
+        0.928896873094678
+      ],
+      "preprocessing+proposed_features+test_selection": [
+        0.7501764270118528,
+        0.7146361314722396,
+        0.7286065190268246,
+        0.7438396756082346,
+        0.7390844315346226,
+        0.7238152097629444
+      ],
+      "duplicates+group_overlap+proposed_features": [
+        0.7171227539420608,
+        0.7074148520379676,
+        0.7304055687761674,
+        0.7340977011494252,
+        0.7250933309770483,
+        0.6925309954465577
+      ],
+      "duplicates+group_overlap+test_selection": [
+        0.919449028236157,
+        0.9121412618648799,
+        0.9416951934946107,
+        0.9327637931034483,
+        0.9391487552188031,
+        0.9303585471703609
+      ],
+      "duplicates+proposed_features+test_selection": [
+        0.7252188651922065,
+        0.709775430050904,
+        0.7217790064946463,
+        0.718067074776198,
+        0.7200297305599438,
+        0.7166397884851676
+      ],
+      "group_overlap+proposed_features+test_selection": [
+        0.7001112352702153,
+        0.6886087841540749,
+        0.7060340755735492,
+        0.7182322600812754,
+        0.7247675271631375,
+        0.6784966466335686
+      ],
+      "duplicates+group_overlap+preprocessing+proposed_features": [
+        0.7146131279794645,
+        0.710569514237856,
+        0.7317672210839771,
+        0.733580459770115,
+        0.7255185667896352,
+        0.6931814871989047
+      ],
+      "duplicates+group_overlap+preprocessing+test_selection": [
+        0.9188892326732672,
+        0.9128866554997208,
+        0.9416920120639848,
+        0.9328724137931035,
+        0.9386638759415936,
+        0.9304129166302584
+      ],
+      "duplicates+preprocessing+proposed_features+test_selection": [
+        0.7254333421098823,
+        0.7102372959452343,
+        0.7207867079164472,
+        0.7180917588204319,
+        0.7192617825171143,
+        0.7175196375285238
+      ],
+      "group_overlap+preprocessing+proposed_features+test_selection": [
+        0.7008898821617229,
+        0.6874706411962734,
+        0.7056168466036887,
+        0.7175534021048244,
+        0.723409370291062,
+        0.6788202247191011
+      ],
+      "duplicates+group_overlap+proposed_features+test_selection": [
+        0.7038475201686836,
+        0.6929318816303741,
+        0.7219270561586134,
+        0.7269235632183907,
+        0.720600742229782,
+        0.6888081437683862
+      ],
+      "duplicates+group_overlap+preprocessing+proposed_features+test_selection": [
+        0.7030694215254858,
+        0.6931479620323842,
+        0.7236679349970094,
+        0.7273735632183909,
+        0.7204836643177449,
+        0.6881775551218944
+      ]
     },
-    {
-     "check": "Nothing is fitted on the full data before the split",
-     "ok": true,
-     "detail": "No preprocessing or resampling ran before the split."
+    "attribution": {
+      "preprocessing": {
+        "label": "Preprocessing fitted before the split",
+        "mean": -7.855432822133171e-05,
+        "lo": -0.0007591862261097798,
+        "hi": 0.0006020775696671163,
+        "per_seed": [
+          0.00016799583701234135,
+          -0.0004672505229956844,
+          -0.0006338457567885295,
+          6.009417945070187e-05,
+          0.000319682657332232,
+          8.199763666094835e-05
+        ],
+        "status": "negligible",
+        "changes_test_population": false,
+        "alone": -0.00017220316074029185,
+        "last": -0.00014686567311326484,
+        "last_lo": -0.0017800010980024649,
+        "last_hi": 0.001486269751775935
+      },
+      "duplicates": {
+        "label": "Duplicate rows across train and test",
+        "mean": 0.0032559318193754665,
+        "lo": -0.009096444280774482,
+        "hi": 0.015608307919525416,
+        "per_seed": [
+          0.006561631282329006,
+          0.0012992646210753446,
+          0.001444944951044982,
+          0.0045033322599819375,
+          0.013315430447348137,
+          -0.00758901264552661
+        ],
+        "status": "uncertain",
+        "changes_test_population": true,
+        "alone": 0.00865884886981444,
+        "last": -0.007026622356039495,
+        "last_lo": -0.019905115368505505,
+        "last_hi": 0.005851870656426515
+      },
+      "group_overlap": {
+        "label": "Same patient in train and test",
+        "mean": 0.010115112023245816,
+        "lo": -0.010866371618161069,
+        "hi": 0.0310965956646527,
+        "per_seed": [
+          0.02147557135230035,
+          0.017360535876149507,
+          -0.005126438158764695,
+          0.0032318663208890713,
+          0.0013772398030993023,
+          0.022371896945801356
+        ],
+        "status": "uncertain",
+        "changes_test_population": true,
+        "alone": 0.006568664917555848,
+        "last": 0.00923507060412069,
+        "last_lo": -0.018906590309582104,
+        "last_hi": 0.03737673151782349
+      },
+      "proposed_features": {
+        "label": "Proposed leak (suspected, not confirmed)",
+        "mean": 0.212752591327392,
+        "lo": 0.1937157893419627,
+        "hi": 0.23178939331282128,
+        "per_seed": [
+          0.20132375517988366,
+          0.2177487230735696,
+          0.210904093705214,
+          0.2060045949188051,
+          0.20911470714539876,
+          0.2314196739414808
+        ],
+        "status": "material",
+        "changes_test_population": false,
+        "alone": 0.201044753327095,
+        "last": 0.21991616756483645,
+        "last_lo": 0.19830963604523072,
+        "last_hi": 0.24152269908444218
+      },
+      "test_selection": {
+        "label": "Model chosen using the test set",
+        "mean": 0.005687810898248195,
+        "lo": 0.0032663358613129615,
+        "hi": 0.008109285935183428,
+        "per_seed": [
+          0.006383221828603309,
+          0.008113470783822095,
+          0.005371819307824408,
+          0.004889594954010772,
+          0.004537357350848324,
+          0.0048314011643802645
+        ],
+        "status": "real",
+        "changes_test_population": false,
+        "alone": 0.0030410103451861126,
+        "last": 0.008885045974507158,
+        "last_lo": 0.0002087571698363381,
+        "last_hi": 0.017561334779177977
+      }
     },
-    {
-     "check": "No step after the split is fitted on test rows",
-     "ok": true,
-     "detail": "All 10 fits after the split used training rows only."
+    "original": {
+      "mean": 0.9410529086088584,
+      "lo": 0.9306696420459277,
+      "hi": 0.9502998512883067,
+      "sd": 0.00533417814331157,
+      "values": [
+        0.9389815970056145,
+        0.937202705864005,
+        0.9356285090455396,
+        0.9460630458515285,
+        0.9491480817217717,
+        0.9392935121646911
+      ]
     },
-    {
-     "check": "No source record appears in both train and test",
-     "ok": true,
-     "detail": "Every test record is distinct from every training record."
+    "corrected": {
+      "mean": 0.7093200168688183,
+      "lo": 0.6787627852148506,
+      "hi": 0.73853482490641,
+      "sd": 0.01675726292251948,
+      "values": [
+        0.7030694215254858,
+        0.6931479620323842,
+        0.7236679349970094,
+        0.7273735632183909,
+        0.7204836643177449,
+        0.6881775551218944
+      ]
     },
-    {
-     "check": "No patient_id appears in both train and test",
-     "ok": true,
-     "detail": "Train and test share no patient_id."
+    "inflation": {
+      "mean": 0.2317328917400401,
+      "lo": 0.20501319551947345,
+      "hi": 0.25845258796060677,
+      "lo_one_sided": 0.21078764126841776,
+      "values": [
+        0.23591217548012866,
+        0.24405474383162085,
+        0.2119605740485302,
+        0.2186894826331376,
+        0.22866441740402677,
+        0.25111595704279677
+      ],
+      "from_reported": 0.22966158013679616
     },
-    {
-     "check": "Removed features (confirmed and proposed) are not used",
-     "ok": true,
-     "detail": "followup_ed_visits_30d absent from all 10 model fits."
+    "waterfall": [
+      {
+        "label": "Reported in notebook",
+        "value": 0.9389815970056145
+      },
+      {
+        "label": "Favourable split (luck of one seed)",
+        "delta": 0.0020713116032439194
+      },
+      {
+        "label": "Proposed leak (suspected, not confirmed)",
+        "delta": -0.212752591327392,
+        "fix": "proposed_features"
+      },
+      {
+        "label": "Same patient in train and test",
+        "delta": -0.010115112023245816,
+        "fix": "group_overlap"
+      },
+      {
+        "label": "Model chosen using the test set",
+        "delta": -0.005687810898248195,
+        "fix": "test_selection"
+      },
+      {
+        "label": "Duplicate rows across train and test",
+        "delta": -0.0032559318193754665,
+        "fix": "duplicates"
+      },
+      {
+        "label": "Preprocessing fitted before the split",
+        "delta": 7.855432822133171e-05,
+        "fix": "preprocessing"
+      },
+      {
+        "label": "Verified estimate",
+        "value": 0.7093200168688183
+      }
+    ],
+    "seconds": 227.2,
+    "runs": 96,
+    "n_train": 1952,
+    "n_test": 620,
+    "legit_scenario": {
+      "corrected": {
+        "mean": 0.9292361844336546,
+        "lo": 0.9075371164935697,
+        "hi": 0.9471787132827355,
+        "sd": 0.011251687685282835,
+        "values": [
+          0.9188892326732672,
+          0.9128866554997208,
+          0.9416920120639848,
+          0.9328724137931035,
+          0.9386638759415936,
+          0.9304129166302584
+        ]
+      },
+      "inflation": {
+        "mean": 0.011816724175203686,
+        "lo": -0.007059362129941935,
+        "hi": 0.030692810480349306,
+        "lo_one_sided": -0.0029800142428370157,
+        "values": [
+          0.02009236433234729,
+          0.024316050364284192,
+          -0.00606350301844516,
+          0.013190632058424967,
+          0.010484205780178057,
+          0.008880595534432767
+        ],
+        "from_reported": 0.009745412571959822
+      }
     },
-    {
-     "check": "All candidate seeds are reported, not the best",
-     "ok": true,
-     "detail": "10 test evaluations averaged; none selected by test score."
+    "proposed": [
+      "followup_ed_visits_30d"
+    ]
+  },
+  "repair": {
+    "ok": true,
+    "code": "from sklearn.ensemble import RandomForestClassifier\nfrom sklearn.metrics import roc_auc_score\nfrom sklearn.model_selection import GroupShuffleSplit\nfrom sklearn.pipeline import make_pipeline\nfrom sklearn.preprocessing import StandardScaler\nimport numpy as np\nimport pandas as pd\n\nimport pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.ensemble import RandomForestClassifier\nfrom sklearn.metrics import roc_auc_score\n\ndf = pd.read_csv(\"hospital_readmissions.csv\")\ndf.head()\n\nfeatures = [\"age\", \"sex_male\", \"comorbidity_index\", \"hba1c\", \"num_prior_admissions\",\n            \"length_of_stay\", \"num_medications\", \"num_diagnoses\", \"emergency_admission\",\n            \"followup_ed_visits_30d\"]\nX = df[features]\ny = df[\"readmitted_30d\"]\n\nscaler = StandardScaler()\n\n# ---- LeakVerity corrected protocol ------------------------------------\n# Generated from the original notebook. Every change below is marked with FIX.\n\nX_lv, y_lv = X, y\nX_lv = X_lv.drop(columns=['followup_ed_visits_30d'])  # PROPOSED FIX: suspected leak, confirm before relying on it\ndup = df.loc[X_lv.index].duplicated().to_numpy()  # same source record (all columns, IDs included)\nX_lv, y_lv = X_lv[~dup], y_lv[~dup]  # FIX: drop records exported more than once\ny_arr = np.asarray(y_lv)\ngroups = df.loc[X_lv.index, 'patient_id']  # FIX: keep each patient_id on one side of the split\ngss = GroupShuffleSplit(n_splits=1, test_size=0.25, random_state=42)\ntrain_idx, test_idx = next(gss.split(X_lv, y_arr, np.asarray(groups)))\ntake = lambda A, i: A.iloc[i] if hasattr(A, 'iloc') else A[i]\nX_train, X_test, y_train, y_test = take(X_lv, train_idx), take(X_lv, test_idx), y_arr[train_idx], y_arr[test_idx]\nCANDIDATES = [{'n_jobs': -1, 'random_state': 0}, {'n_jobs': -1, 'random_state': 1}, {'n_jobs': -1, 'random_state': 2}, {'n_jobs': -1, 'random_state': 3}, {'n_jobs': -1, 'random_state': 4}, {'n_jobs': -1, 'random_state': 5}, {'n_jobs': -1, 'random_state': 6}, {'n_jobs': -1, 'random_state': 7}, {'n_jobs': -1, 'random_state': 8}, {'n_jobs': -1, 'random_state': 9}]\n# FIX: preprocessing now lives inside the pipeline, so it is fitted on training rows only\nscores = []\nfor params in CANDIDATES:  # FIX: report the average over seeds, not the best test score\n    model = make_pipeline(StandardScaler(), RandomForestClassifier(**params))\n    model.fit(X_train, y_train)\n    scores.append(roc_auc_score(y_test, model.predict_proba(X_test)[:, 1]))\nresult = float(np.mean(scores))\nprint(f\"LeakVerity corrected result: {result:.6f}\")\n",
+    "diff": "--- original\n+++ corrected\n@@ -1,2 +1,10 @@\n+from sklearn.ensemble import RandomForestClassifier\n+from sklearn.metrics import roc_auc_score\n+from sklearn.model_selection import GroupShuffleSplit\n+from sklearn.pipeline import make_pipeline\n+from sklearn.preprocessing import StandardScaler\n+import numpy as np\n+import pandas as pd\n+\n import pandas as pd\n import numpy as np\n@@ -16,16 +24,26 @@\n \n scaler = StandardScaler()\n-X_scaled = scaler.fit_transform(X)\n \n-X_train, X_test, y_train, y_test = train_test_split(\n-    X_scaled, y, test_size=0.25, random_state=42, stratify=y)\n+# ---- LeakVerity corrected protocol ------------------------------------\n+# Generated from the original notebook. Every change below is marked with FIX.\n \n-best_auc, best_seed = 0, None\n-for seed in range(10):\n-    model = RandomForestClassifier(n_estimators=100, random_state=seed, n_jobs=-1)\n+X_lv, y_lv = X, y\n+X_lv = X_lv.drop(columns=['followup_ed_visits_30d'])  # PROPOSED FIX: suspected leak, confirm before relying on it\n+dup = df.loc[X_lv.index].duplicated().to_numpy()  # same source record (all columns, IDs included)\n+X_lv, y_lv = X_lv[~dup], y_lv[~dup]  # FIX: drop records exported more than once\n+y_arr = np.asarray(y_lv)\n+groups = df.loc[X_lv.index, 'patient_id']  # FIX: keep each patient_id on one side of the split\n+gss = GroupShuffleSplit(n_splits=1, test_size=0.25, random_state=42)\n+train_idx, test_idx = next(gss.split(X_lv, y_arr, np.asarray(groups)))\n+take = lambda A, i: A.iloc[i] if hasattr(A, 'iloc') else A[i]\n+X_train, X_test, y_train, y_test = take(X_lv, train_idx), take(X_lv, test_idx), y_arr[train_idx], y_arr[test_idx]\n+CANDIDATES = [{'n_jobs': -1, 'random_state': 0}, {'n_jobs': -1, 'random_state': 1}, {'n_jobs': -1, 'random_state': 2}, {'n_jobs': -1, 'random_state': 3}, {'n_jobs': -1, 'random_state': 4}, {'n_jobs': -1, 'random_state': 5}, {'n_jobs': -1, 'random_state': 6}, {'n_jobs': -1, 'random_state': 7}, {'n_jobs': -1, 'random_state': 8}, {'n_jobs': -1, 'random_state': 9}]\n+# FIX: preprocessing now lives inside the pipeline, so it is fitted on training rows only\n+scores = []\n+for params in CANDIDATES:  # FIX: report the average over seeds, not the best test score\n+    model = make_pipeline(StandardScaler(), RandomForestClassifier(**params))\n     model.fit(X_train, y_train)\n-    auc = roc_auc_score(y_test, model.predict_proba(X_test)[:, 1])\n-    if auc > best_auc:\n-        best_auc, best_seed = auc, seed\n-print(f\"Test AUC: {best_auc:.3f} (seed {best_seed})\")\n+    scores.append(roc_auc_score(y_test, model.predict_proba(X_test)[:, 1]))\n+result = float(np.mean(scores))\n+print(f\"LeakVerity corrected result: {result:.6f}\")\n \n",
+    "cut_line": 18,
+    "kept_lines": 17,
+    "verification": {
+      "ran": true,
+      "value": 0.703069,
+      "expected": 0.7030694215254858,
+      "error": null,
+      "checks": [
+        {
+          "check": "Corrected code reproduces the replay engine's number",
+          "ok": true,
+          "detail": "printed 0.703069, replay engine 0.703069"
+        },
+        {
+          "check": "Nothing is fitted on the full data before the split",
+          "ok": true,
+          "detail": "No preprocessing or resampling ran before the split."
+        },
+        {
+          "check": "No step after the split is fitted on test rows",
+          "ok": true,
+          "detail": "All 10 fits after the split used training rows only."
+        },
+        {
+          "check": "No source record appears in both train and test",
+          "ok": true,
+          "detail": "Every test record is distinct from every training record."
+        },
+        {
+          "check": "No patient_id appears in both train and test",
+          "ok": true,
+          "detail": "Train and test share no patient_id."
+        },
+        {
+          "check": "Removed features (confirmed and proposed) are not used",
+          "ok": true,
+          "detail": "followup_ed_visits_30d absent from all 10 model fits."
+        },
+        {
+          "check": "All candidate seeds are reported, not the best",
+          "ok": true,
+          "detail": "10 test evaluations averaged; none selected by test score."
+        }
+      ],
+      "verified": true
     }
-   ],
-   "verified": true
-  }
- },
- "survival": {
-  "stability": {
-   "name": "Seed and split stability",
-   "runs": 20,
-   "mean": 0.70343453721761,
-   "lo": 0.6731004311779039,
-   "hi": 0.7329916840915054,
-   "sd": 0.022719529764311498,
-   "min": 0.6664669595704079,
-   "max": 0.7436311955942441,
-   "values": [
-    0.7380766053649841,
-    0.7032305339620237,
-    0.7054963906960164,
-    0.7288494774092666,
-    0.7116694677871148,
-    0.6786198000644953,
-    0.7145216824865065,
-    0.6805030247168632,
-    0.6896080534126683,
-    0.7403537904471966,
-    0.7436311955942441,
-    0.6800210341400273,
-    0.7103612123448816,
-    0.6984794497845541,
-    0.7164683252413122,
-    0.6664669595704079,
-    0.6932101268756156,
-    0.7055803277248167,
-    0.6705951072017593,
-    0.692948179527444
-   ],
-   "selection": "Each re-split evaluates one of the 10 candidate seeds in turn, matching the corrected estimate's average over seeds.",
-   "status": "pass",
-   "rule": "Pass if the standard deviation across 20 re-splits is at most 0.03."
   },
-  "subgroup": {
-   "name": "Subgroup performance",
-   "column": "age_group",
-   "overall": 0.70343453721761,
-   "groups": [
-    {
-     "level": "18-64",
-     "n": 334,
-     "pos": 129,
-     "unique": 832,
-     "mean": 0.7548564579006775,
-     "lo": 0.7140779080343047,
-     "hi": 0.7936849379258595,
-     "status": "pass"
+  "survival": {
+    "stability": {
+      "name": "Seed and split stability",
+      "runs": 20,
+      "mean": 0.70343453721761,
+      "lo": 0.6731004311779039,
+      "hi": 0.7329916840915054,
+      "sd": 0.022719529764311498,
+      "min": 0.6664669595704079,
+      "max": 0.7436311955942441,
+      "values": [
+        0.7380766053649841,
+        0.7032305339620237,
+        0.7054963906960164,
+        0.7288494774092666,
+        0.7116694677871148,
+        0.6786198000644953,
+        0.7145216824865065,
+        0.6805030247168632,
+        0.6896080534126683,
+        0.7403537904471966,
+        0.7436311955942441,
+        0.6800210341400273,
+        0.7103612123448816,
+        0.6984794497845541,
+        0.7164683252413122,
+        0.6664669595704079,
+        0.6932101268756156,
+        0.7055803277248167,
+        0.6705951072017593,
+        0.692948179527444
+      ],
+      "selection": "Each re-split evaluates one of the 10 candidate seeds in turn, matching the corrected estimate's average over seeds.",
+      "status": "pass",
+      "rule": "Pass if the standard deviation across 20 re-splits is at most 0.03."
     },
-    {
-     "level": "65+",
-     "n": 303,
-     "pos": 80,
-     "unique": 766,
-     "mean": 0.6065463808680269,
-     "lo": 0.5667250835930719,
-     "hi": 0.6457584927153879,
-     "status": "concern"
-    }
-   ],
-   "status": "concern",
-   "rule": "Concern if a subgroup's AUC is more than 0.05 below overall and its CI excludes the overall value."
-  },
-  "temporal": {
-   "name": "Time-based validation",
-   "column": "admit_date",
-   "cutoff": "2025-03-25",
-   "value": 0.7445072672840367,
-   "random_split": 0.70343453721761,
-   "n_train": 1934,
-   "n_test": 548,
-   "status": "pass",
-   "rule": "Train on records before the cutoff, test on later records (new patient_id only). Concern if more than 0.03 below the random-split estimate."
-  },
-  "limitations": "These tests re-split the same dataset, so the 20 splits overlap and are not independent samples; they probe robustness under the corrected protocol, not generalisation to new sites, populations or time periods. Thresholds are fixed in advance; a pass means no problem was found, not that none exists. Tests with too few cases are reported as inconclusive."
- },
- "survival_if_legitimate": {
-  "stability": {
-   "name": "Seed and split stability",
-   "runs": 20,
-   "mean": 0.9276920144875748,
-   "lo": 0.911553068476327,
-   "hi": 0.9424419237840579,
-   "sd": 0.011525061206466083,
-   "min": 0.9039142535678333,
-   "max": 0.9521379505238903,
-   "values": [
-    0.9521379505238903,
-    0.9169640202200416,
-    0.9415827466357722,
-    0.926055468685705,
-    0.9270644257703082,
-    0.9419165860475116,
-    0.9344814349525405,
-    0.928492726906737,
-    0.9193447953782822,
-    0.9308794022002352,
-    0.9039142535678333,
-    0.9387409564755103,
-    0.9358536697882547,
-    0.9275874212794166,
-    0.9315055794389275,
-    0.92890427373186,
-    0.9228434042060136,
-    0.9182884505557264,
-    0.9114955561663918,
-    0.9157871672205383
-   ],
-   "selection": "Each re-split evaluates one of the 10 candidate seeds in turn, matching the corrected estimate's average over seeds.",
-   "status": "pass",
-   "rule": "Pass if the standard deviation across 20 re-splits is at most 0.03."
-  },
-  "subgroup": {
-   "name": "Subgroup performance",
-   "column": "age_group",
-   "overall": 0.9276920144875748,
-   "groups": [
-    {
-     "level": "18-64",
-     "n": 334,
-     "pos": 129,
-     "unique": 832,
-     "mean": 0.9378342416152459,
-     "lo": 0.9233833923122435,
-     "hi": 0.9510123346096724,
-     "status": "pass"
+    "subgroup": {
+      "name": "Subgroup performance",
+      "column": "age_group",
+      "overall": 0.70343453721761,
+      "groups": [
+        {
+          "level": "18-64",
+          "n": 334,
+          "pos": 129,
+          "unique": 832,
+          "mean": 0.7548564579006775,
+          "lo": 0.7140779080343047,
+          "hi": 0.7936849379258595,
+          "status": "pass"
+        },
+        {
+          "level": "65+",
+          "n": 303,
+          "pos": 80,
+          "unique": 766,
+          "mean": 0.6065463808680269,
+          "lo": 0.5667250835930719,
+          "hi": 0.6457584927153879,
+          "status": "concern"
+        }
+      ],
+      "status": "concern",
+      "rule": "Concern if a subgroup's AUC is more than 0.05 below overall and its CI excludes the overall value."
     },
-    {
-     "level": "65+",
-     "n": 303,
-     "pos": 80,
-     "unique": 766,
-     "mean": 0.9105275787205575,
-     "lo": 0.8808759882710117,
-     "hi": 0.9365626229799772,
-     "status": "pass"
-    }
-   ],
-   "status": "pass",
-   "rule": "Concern if a subgroup's AUC is more than 0.05 below overall and its CI excludes the overall value."
+    "temporal": {
+      "name": "Time-based validation",
+      "column": "admit_date",
+      "cutoff": "2025-03-25",
+      "value": 0.7445072672840367,
+      "random_split": 0.70343453721761,
+      "n_train": 1934,
+      "n_test": 548,
+      "status": "pass",
+      "rule": "Train on records before the cutoff, test on later records (new patient_id only). Concern if more than 0.03 below the random-split estimate."
+    },
+    "limitations": "These tests re-split the same dataset, so the 20 splits overlap and are not independent samples; they probe robustness under the corrected protocol, not generalisation to new sites, populations or time periods. Thresholds are fixed in advance; a pass means no problem was found, not that none exists. Tests with too few cases are reported as inconclusive."
   },
-  "temporal": {
-   "name": "Time-based validation",
-   "column": "admit_date",
-   "cutoff": "2025-03-25",
-   "value": 0.9382761723052104,
-   "random_split": 0.9276920144875748,
-   "n_train": 1934,
-   "n_test": 548,
-   "status": "pass",
-   "rule": "Train on records before the cutoff, test on later records (new patient_id only). Concern if more than 0.03 below the random-split estimate."
+  "survival_if_legitimate": {
+    "stability": {
+      "name": "Seed and split stability",
+      "runs": 20,
+      "mean": 0.9276920144875748,
+      "lo": 0.911553068476327,
+      "hi": 0.9424419237840579,
+      "sd": 0.011525061206466083,
+      "min": 0.9039142535678333,
+      "max": 0.9521379505238903,
+      "values": [
+        0.9521379505238903,
+        0.9169640202200416,
+        0.9415827466357722,
+        0.926055468685705,
+        0.9270644257703082,
+        0.9419165860475116,
+        0.9344814349525405,
+        0.928492726906737,
+        0.9193447953782822,
+        0.9308794022002352,
+        0.9039142535678333,
+        0.9387409564755103,
+        0.9358536697882547,
+        0.9275874212794166,
+        0.9315055794389275,
+        0.92890427373186,
+        0.9228434042060136,
+        0.9182884505557264,
+        0.9114955561663918,
+        0.9157871672205383
+      ],
+      "selection": "Each re-split evaluates one of the 10 candidate seeds in turn, matching the corrected estimate's average over seeds.",
+      "status": "pass",
+      "rule": "Pass if the standard deviation across 20 re-splits is at most 0.03."
+    },
+    "subgroup": {
+      "name": "Subgroup performance",
+      "column": "age_group",
+      "overall": 0.9276920144875748,
+      "groups": [
+        {
+          "level": "18-64",
+          "n": 334,
+          "pos": 129,
+          "unique": 832,
+          "mean": 0.9378342416152459,
+          "lo": 0.9233833923122435,
+          "hi": 0.9510123346096724,
+          "status": "pass"
+        },
+        {
+          "level": "65+",
+          "n": 303,
+          "pos": 80,
+          "unique": 766,
+          "mean": 0.9105275787205575,
+          "lo": 0.8808759882710117,
+          "hi": 0.9365626229799772,
+          "status": "pass"
+        }
+      ],
+      "status": "pass",
+      "rule": "Concern if a subgroup's AUC is more than 0.05 below overall and its CI excludes the overall value."
+    },
+    "temporal": {
+      "name": "Time-based validation",
+      "column": "admit_date",
+      "cutoff": "2025-03-25",
+      "value": 0.9382761723052104,
+      "random_split": 0.9276920144875748,
+      "n_train": 1934,
+      "n_test": 548,
+      "status": "pass",
+      "rule": "Train on records before the cutoff, test on later records (new patient_id only). Concern if more than 0.03 below the random-split estimate."
+    },
+    "limitations": "These tests re-split the same dataset, so the 20 splits overlap and are not independent samples; they probe robustness under the corrected protocol, not generalisation to new sites, populations or time periods. Thresholds are fixed in advance; a pass means no problem was found, not that none exists. Tests with too few cases are reported as inconclusive."
   },
-  "limitations": "These tests re-split the same dataset, so the 20 splits overlap and are not independent samples; they probe robustness under the corrected protocol, not generalisation to new sites, populations or time periods. Thresholds are fixed in advance; a pass means no problem was found, not that none exists. Tests with too few cases are reported as inconclusive."
- },
- "verdict": {
-  "verdict": "Depends on review",
-  "reason": "The verdict depends on whether `followup_ed_visits_30d` is available at prediction time. If not (the proposed leak is confirmed): Overstated. The claimed AUC of 0.940 is above what survives correction: 0.709 (95% CI 0.679\u20130.739). Across the replayed splits the corrected result was reliably lower: paired inflation 0.232 (one-sided 95% lower bound 0.211). The model still performs better than chance (0.50). If it is legitimate: Supported. The claimed AUC of 0.940 is consistent with the verified estimate 0.929 (95% CI 0.908\u20130.947). Confirm or reject it and re-run to settle the verdict.",
-  "concerns": [
-   "subgroup"
-  ],
-  "caveats": [
-   {
-    "test": "subgroup",
-    "text": "Lower performance in age_group = 65+ (0.607) versus 0.703 overall.",
-    "contradicts_claim": true
-   }
-  ],
-  "chance": 0.5,
-  "scenarios": {
-   "confirmed": {
-    "verdict": "Overstated",
-    "reason": "The claimed AUC of 0.940 is above what survives correction: 0.709 (95% CI 0.679\u20130.739). Across the replayed splits the corrected result was reliably lower: paired inflation 0.232 (one-sided 95% lower bound 0.211). The model still performs better than chance (0.50).",
+  "verdict": {
+    "verdict": "Depends on review",
+    "reason": "The verdict depends on whether `followup_ed_visits_30d` is available at prediction time. If not (the proposed leak is confirmed): Overstated. The claimed AUC of 0.940 is above what survives correction: 0.709 (95% CI 0.679–0.739). Across the replayed splits the corrected result was reliably lower: paired inflation 0.232 (one-sided 95% lower bound 0.211). The model still performs better than chance (0.50). If it is legitimate: Supported. The claimed AUC of 0.940 is consistent with the verified estimate 0.929 (95% CI 0.908–0.947). Confirm or reject it and re-run to settle the verdict.",
     "concerns": [
-     "subgroup"
+      "subgroup"
     ],
     "caveats": [
-     {
-      "test": "subgroup",
-      "text": "Lower performance in age_group = 65+ (0.607) versus 0.703 overall.",
-      "contradicts_claim": true
-     }
+      {
+        "test": "subgroup",
+        "text": "Lower performance in age_group = 65+ (0.607) versus 0.703 overall.",
+        "contradicts_claim": true
+      }
     ],
-    "chance": 0.5
-   },
-   "legitimate": {
-    "verdict": "Supported",
-    "reason": "The claimed AUC of 0.940 is consistent with the verified estimate 0.929 (95% CI 0.908\u20130.947).",
-    "concerns": [],
-    "caveats": [],
-    "chance": 0.5
-   },
-   "agree": false
+    "chance": 0.5,
+    "scenarios": {
+      "confirmed": {
+        "verdict": "Overstated",
+        "reason": "The claimed AUC of 0.940 is above what survives correction: 0.709 (95% CI 0.679–0.739). Across the replayed splits the corrected result was reliably lower: paired inflation 0.232 (one-sided 95% lower bound 0.211). The model still performs better than chance (0.50).",
+        "concerns": [
+          "subgroup"
+        ],
+        "caveats": [
+          {
+            "test": "subgroup",
+            "text": "Lower performance in age_group = 65+ (0.607) versus 0.703 overall.",
+            "contradicts_claim": true
+          }
+        ],
+        "chance": 0.5
+      },
+      "legitimate": {
+        "verdict": "Supported",
+        "reason": "The claimed AUC of 0.940 is consistent with the verified estimate 0.929 (95% CI 0.908–0.947).",
+        "concerns": [],
+        "caveats": [],
+        "chance": 0.5
+      },
+      "agree": false
+    },
+    "main_driver": "`followup_ed_visits_30d` may not be available when the prediction is made (proposed)",
+    "rules": [
+      [
+        "Supported",
+        "The claimed value is within the verified 95% CI (plus 0.01), there is no reliable paired inflation, the corrected CI excludes chance, and no survival test fails against the claim's stated scope. Other survival concerns are listed as caveats."
+      ],
+      [
+        "Overstated",
+        "The claim does not survive but signal remains (the corrected CI excludes chance, or its point estimate is more than 0.05 above chance): it is above the verified 95% CI (plus 0.01), or the paired inflation across splits has a one-sided 95% lower bound above 0.01 and the claim exceeds the verified mean by more than 0.02, or a survival test fails against the claim's scope (instability while the claim exceeds the verified mean; a subgroup or time-based failure for a general claim)."
+      ],
+      [
+        "Contradicted",
+        "The claimed value is ruled out (above the verified 95% CI plus 0.01), the corrected CI includes chance, AND the corrected point estimate is within 0.05 of chance: the reported result does not stand and the corrected evidence points to no meaningful signal. This is not proof that the model has none."
+      ],
+      [
+        "Insufficient evidence",
+        "The protocol could not be replayed faithfully or verified; or the corrected estimate is too uncertain to either confirm or rule out the claim (its CI includes both the claim and chance)."
+      ],
+      [
+        "Depends on review",
+        "A proposed leak (a suspicion from a feature's meaning or from code that mixes rows, without proof of timing) changes the verdict: the claim is evaluated with the feature removed and kept, and the two verdicts differ. Confirming or rejecting the feature settles it. When both verdicts agree, that verdict is issued and the certificate says it holds either way."
+      ]
+    ]
   },
-  "main_driver": "`followup_ed_visits_30d` may not be available when the prediction is made (proposed)",
-  "rules": [
-   [
-    "Supported",
-    "The claimed value is within the verified 95% CI (plus 0.01), there is no reliable paired inflation, the corrected CI excludes chance, and no survival test fails against the claim's stated scope. Other survival concerns are listed as caveats."
-   ],
-   [
-    "Overstated",
-    "The claim does not survive but signal remains (the corrected CI excludes chance, or its point estimate is more than 0.05 above chance): it is above the verified 95% CI (plus 0.01), or the paired inflation across splits has a one-sided 95% lower bound above 0.01 and the claim exceeds the verified mean by more than 0.02, or a survival test fails against the claim's scope (instability while the claim exceeds the verified mean; a subgroup or time-based failure for a general claim)."
-   ],
-   [
-    "Contradicted",
-    "The claimed value is ruled out (above the verified 95% CI plus 0.01), the corrected CI includes chance, AND the corrected point estimate is within 0.05 of chance: the reported result does not stand and the corrected evidence points to no meaningful signal. This is not proof that the model has none."
-   ],
-   [
-    "Insufficient evidence",
-    "The protocol could not be replayed faithfully or verified; or the corrected estimate is too uncertain to either confirm or rule out the claim (its CI includes both the claim and chance)."
-   ],
-   [
-    "Depends on review",
-    "A proposed leak (a suspicion from a feature's meaning or from code that mixes rows, without proof of timing) changes the verdict: the claim is evaluated with the feature removed and kept, and the two verdicts differ. Confirming or rejecting the feature settles it. When both verdicts agree, that verdict is issued and the certificate says it holds either way."
-   ]
-  ]
- },
- "findings": [
-  {
-   "id": "F1",
-   "rule": "LV-PREPROCESSING",
-   "fix": "preprocessing",
-   "title": "StandardScaler learned its parameters from all 2,726 rows before the split",
-   "lines": [
-    18,
-    20
-   ],
-   "evidence": [
-    "StandardScaler.fit ran at cell 5, line 2: `X_scaled = scaler.fit_transform(X)`",
-    "The split ran afterwards at cell 6, line 1 and held out 682 of those rows."
-   ],
-   "explanation": "StandardScaler estimates its parameters (for example means and spreads) from the data it is fitted on. Fitting it before the split lets statistics of the test rows shape the training data.",
-   "source": "execution trace",
-   "impact": {
-    "mean": -7.855432822133171e-05,
-    "lo": -0.0007591862261097798,
-    "hi": 0.0006020775696671163,
-    "status": "negligible",
-    "alone": -0.00017220316074029185,
-    "last": -0.00014686567311326484,
-    "last_lo": -0.0017800010980024649,
-    "last_hi": 0.001486269751775935
-   },
-   "impact_text": "Fixing this lowers the AUC by -0.000 on a fair share basis (95% CI -0.001 to 0.001); -0.000 if fixed alone, -0.000 once all other leaks are fixed."
-  },
-  {
-   "id": "F2",
-   "rule": "LV-DUPLICATES",
-   "fix": "duplicates",
-   "title": "60 test rows are copies of training records",
-   "lines": [
-    20
-   ],
-   "evidence": [
-    "After the split at cell 6, line 1, 60 of 682 test rows (8.8%) are the same source record as a training row (every column identical, IDs included)."
-   ],
-   "explanation": "A model can score those rows by recalling the identical training example instead of generalising. The fix removes records exported more than once, keeping the first copy.",
-   "source": "execution trace + source records",
-   "impact": {
-    "mean": 0.0032559318193754665,
-    "lo": -0.009096444280774482,
-    "hi": 0.015608307919525416,
-    "status": "uncertain",
-    "alone": 0.00865884886981444,
-    "last": -0.007026622356039495,
-    "last_lo": -0.019905115368505505,
-    "last_hi": 0.005851870656426515
-   },
-   "impact_text": "Fixing this lowers the AUC by 0.003 on a fair share basis (95% CI -0.009 to 0.016); 0.009 if fixed alone, -0.007 once all other leaks are fixed."
-  },
-  {
-   "id": "F3",
-   "rule": "LV-GROUP-OVERLAP",
-   "fix": "group_overlap",
-   "title": "332 patient_id values appear in both train and test",
-   "lines": [
-    20
-   ],
-   "evidence": [
-    "The random split at cell 6, line 1 placed records of the same patient_id on both sides: 385 of 682 test rows (56.5%) belong to a patient_id that is also in training."
-   ],
-   "explanation": "Records from one patient_id share stable traits and outcomes. The model can recognise the individual rather than learn patterns that transfer to new people.",
-   "source": "execution trace + data",
-   "impact": {
-    "mean": 0.010115112023245816,
-    "lo": -0.010866371618161069,
-    "hi": 0.0310965956646527,
-    "status": "uncertain",
-    "alone": 0.006568664917555848,
-    "last": 0.00923507060412069,
-    "last_lo": -0.018906590309582104,
-    "last_hi": 0.03737673151782349
-   },
-   "impact_text": "Fixing this lowers the AUC by 0.010 on a fair share basis (95% CI -0.011 to 0.031); 0.007 if fixed alone, 0.009 once all other leaks are fixed."
-  },
-  {
-   "id": "F4",
-   "rule": "LV-PROPOSED-LEAK",
-   "fix": "proposed_features",
-   "column": "followup_ed_visits_30d",
-   "proposed": true,
-   "title": "`followup_ed_visits_30d` may not be available when the prediction is made (proposed)",
-   "lines": [
-    13
-   ],
-   "evidence": [
-    "Reason: The name \u201cfollowup_ed_visits_30d\u201d suggests it is recorded after the prediction point or derived from the outcome, and on its own it separates the classes with AUC 0.90.",
-    "On its own, `followup_ed_visits_30d` separates the two outcome classes with AUC 0.90.",
-    "Selected as a model feature at cell 4, line 3."
-   ],
-   "confidence": "high",
-   "explanation": "If a feature is only recorded after the prediction point, the model is partly reading the answer. This is a suspicion from the feature's meaning, not proof of its timing, so LeakVerity evaluates the claim both ways (feature removed and feature kept) and reports whether the verdict depends on it. Confirm or reject it to settle the verdict.",
-   "source": "rule-based semantic audit",
-   "impact": {
-    "mean": 0.212752591327392,
-    "lo": 0.1937157893419627,
-    "hi": 0.23178939331282128,
-    "status": "material",
-    "alone": 0.201044753327095,
-    "last": 0.21991616756483645,
-    "last_lo": 0.19830963604523072,
-    "last_hi": 0.24152269908444218
-   },
-   "impact_text": "Fixing this lowers the AUC by 0.213 on a fair share basis (95% CI 0.194 to 0.232); 0.201 if fixed alone, 0.220 once all other leaks are fixed."
-  },
-  {
-   "id": "F5",
-   "rule": "LV-TEST-SELECTION",
-   "fix": "test_selection",
-   "title": "10 models were compared on the test set and the best was reported",
-   "lines": [
-    27
-   ],
-   "evidence": [
-    "10 RandomForestClassifier models with different random seeds were each scored on the same 682 test labels at cell 7, line 5.",
-    "Scores ranged from 0.932 to 0.939; the notebook reports 0.939."
-   ],
-   "explanation": "Picking the best of several test scores turns the test set into a selection tool, so the winning score is biased upward. An honest estimate averages the candidates or selects them on training data.",
-   "source": "execution trace",
-   "impact": {
-    "mean": 0.005687810898248195,
-    "lo": 0.0032663358613129615,
-    "hi": 0.008109285935183428,
-    "status": "real",
-    "alone": 0.0030410103451861126,
-    "last": 0.008885045974507158,
-    "last_lo": 0.0002087571698363381,
-    "last_hi": 0.017561334779177977
-   },
-   "impact_text": "Fixing this lowers the AUC by 0.006 on a fair share basis (95% CI 0.003 to 0.008); 0.003 if fixed alone, 0.009 once all other leaks are fixed."
-  }
- ],
- "log": [
-  {
-   "stage": "intake",
-   "message": "Loaded notebook (31 lines) and hospital_readmissions.csv (2,726 rows \u00d7 15 columns)",
-   "t": 0.0
-  },
-  {
-   "stage": "reproduce",
-   "message": "Running the original experiment in the sandbox\u2026",
-   "t": 0.0
-  },
-  {
-   "stage": "reproduce",
-   "message": "Original experiment ran in 5.0 s; captured 33 events",
-   "t": 5.1
-  },
-  {
-   "stage": "protocol",
-   "message": "Reconstructed protocol: Load data \u2192 Fit StandardScaler (all rows) \u2192 Split (train_test_split) \u2192 Fit RandomForestClassifier \u00d710 \u2192 Evaluate on test \u2192 keep best",
-   "t": 5.1
-  },
-  {
-   "stage": "investigate",
-   "message": "Auditing features against the prediction point (rule-based)\u2026",
-   "t": 5.1
-  },
-  {
-   "stage": "investigate",
-   "message": "5 potential leaks found: preprocessing fitted before the split, duplicate rows across train and test, same patient in train and test, proposed leak (suspected, not confirmed), model chosen using the test set",
-   "t": 5.1
-  },
-  {
-   "stage": "replay",
-   "message": "Checking that the protocol replays to the reported number\u2026",
-   "t": 5.1
-  },
-  {
-   "stage": "fidelity",
-   "message": "Replayed protocol reproduces 0.9390 (notebook reported 0.9390)",
-   "t": 7.5
-  },
-  {
-   "stage": "replay",
-   "message": "Counterfactual run 96/96: fixes = duplicates+group_overlap+preprocessing+proposed_features, split seed 1004",
-   "t": 232.3,
-   "frac": 1.0
-  },
-  {
-   "stage": "repair",
-   "message": "Generating the corrected notebook\u2026",
-   "t": 232.3
-  },
-  {
-   "stage": "repair",
-   "message": "Executing the corrected code to verify it\u2026",
-   "t": 232.3
-  },
-  {
-   "stage": "repair",
-   "message": "Corrected code verified: 7/7 checks passed",
-   "t": 237.2
-  },
-  {
-   "stage": "survival",
-   "message": "Stability re-split 20/20",
-   "t": 242.1,
-   "frac": 1.0
-  },
-  {
-   "stage": "survival",
-   "message": "Stability re-split 20/20",
-   "t": 249.0,
-   "frac": 1.0
-  },
-  {
-   "stage": "done",
-   "message": "Verdict: Depends on review",
-   "t": 251.3
-  }
- ],
- "seconds": 251.3
+  "findings": [
+    {
+      "id": "F1",
+      "rule": "LV-PREPROCESSING",
+      "fix": "preprocessing",
+      "title": "StandardScaler learned its parameters from all 2,726 rows before the split",
+      "lines": [
+        18,
+        20
+      ],
+      "evidence": [
+        "StandardScaler.fit ran at cell 5, line 2: `X_scaled = scaler.fit_transform(X)`",
+        "The split ran afterwards at cell 6, line 1 and held out 682 of those rows."
+      ],
+      "explanation": "StandardScaler estimates its parameters (for example means and spreads) from the data it is fitted on. Fitting it before the split lets statistics of the test rows shape the training data.",
+      "source": "execution trace",
+      "impact": {
+        "mean": -7.855432822133171e-05,
+        "lo": -0.0007591862261097798,
+        "hi": 0.0006020775696671163,
+        "status": "negligible",
+        "alone": -0.00017220316074029185,
+        "last": -0.00014686567311326484,
+        "last_lo": -0.0017800010980024649,
+        "last_hi": 0.001486269751775935
+      },
+      "impact_text": "Fixing this lowers the AUC by -0.000 on a fair share basis (95% CI -0.001 to 0.001); -0.000 if fixed alone, -0.000 once all other leaks are fixed."
+    },
+    {
+      "id": "F2",
+      "rule": "LV-DUPLICATES",
+      "fix": "duplicates",
+      "title": "60 test rows are copies of training records",
+      "lines": [
+        20
+      ],
+      "evidence": [
+        "After the split at cell 6, line 1, 60 of 682 test rows (8.8%) are the same source record as a training row (every column identical, IDs included)."
+      ],
+      "explanation": "A model can score those rows by recalling the identical training example instead of generalising. The fix removes records exported more than once, keeping the first copy.",
+      "source": "execution trace + source records",
+      "impact": {
+        "mean": 0.0032559318193754665,
+        "lo": -0.009096444280774482,
+        "hi": 0.015608307919525416,
+        "status": "uncertain",
+        "alone": 0.00865884886981444,
+        "last": -0.007026622356039495,
+        "last_lo": -0.019905115368505505,
+        "last_hi": 0.005851870656426515
+      },
+      "impact_text": "Fixing this lowers the AUC by 0.003 on a fair share basis (95% CI -0.009 to 0.016); 0.009 if fixed alone, -0.007 once all other leaks are fixed."
+    },
+    {
+      "id": "F3",
+      "rule": "LV-GROUP-OVERLAP",
+      "fix": "group_overlap",
+      "title": "332 patient_id values appear in both train and test",
+      "lines": [
+        20
+      ],
+      "evidence": [
+        "The random split at cell 6, line 1 placed records of the same patient_id on both sides: 385 of 682 test rows (56.5%) belong to a patient_id that is also in training."
+      ],
+      "explanation": "Records from one patient_id share stable traits and outcomes. The model can recognise the individual rather than learn patterns that transfer to new people.",
+      "source": "execution trace + data",
+      "impact": {
+        "mean": 0.010115112023245816,
+        "lo": -0.010866371618161069,
+        "hi": 0.0310965956646527,
+        "status": "uncertain",
+        "alone": 0.006568664917555848,
+        "last": 0.00923507060412069,
+        "last_lo": -0.018906590309582104,
+        "last_hi": 0.03737673151782349
+      },
+      "impact_text": "Fixing this lowers the AUC by 0.010 on a fair share basis (95% CI -0.011 to 0.031); 0.007 if fixed alone, 0.009 once all other leaks are fixed."
+    },
+    {
+      "id": "F4",
+      "rule": "LV-PROPOSED-LEAK",
+      "fix": "proposed_features",
+      "column": "followup_ed_visits_30d",
+      "proposed": true,
+      "title": "`followup_ed_visits_30d` may not be available when the prediction is made (proposed)",
+      "lines": [
+        13
+      ],
+      "evidence": [
+        "Reason: The name “followup_ed_visits_30d” suggests it is recorded after the prediction point or derived from the outcome, and on its own it separates the classes with AUC 0.90.",
+        "On its own, `followup_ed_visits_30d` separates the two outcome classes with AUC 0.90.",
+        "Selected as a model feature at cell 4, line 3."
+      ],
+      "confidence": "high",
+      "explanation": "If a feature is only recorded after the prediction point, the model is partly reading the answer. This is a suspicion from the feature's meaning, not proof of its timing, so LeakVerity evaluates the claim both ways (feature removed and feature kept) and reports whether the verdict depends on it. Confirm or reject it to settle the verdict.",
+      "source": "rule-based semantic audit",
+      "impact": {
+        "mean": 0.212752591327392,
+        "lo": 0.1937157893419627,
+        "hi": 0.23178939331282128,
+        "status": "material",
+        "alone": 0.201044753327095,
+        "last": 0.21991616756483645,
+        "last_lo": 0.19830963604523072,
+        "last_hi": 0.24152269908444218
+      },
+      "impact_text": "Fixing this lowers the AUC by 0.213 on a fair share basis (95% CI 0.194 to 0.232); 0.201 if fixed alone, 0.220 once all other leaks are fixed."
+    },
+    {
+      "id": "F5",
+      "rule": "LV-TEST-SELECTION",
+      "fix": "test_selection",
+      "title": "10 models were compared on the test set and the best was reported",
+      "lines": [
+        27
+      ],
+      "evidence": [
+        "10 RandomForestClassifier models with different random seeds were each scored on the same 682 test labels at cell 7, line 5.",
+        "Scores ranged from 0.932 to 0.939; the notebook reports 0.939."
+      ],
+      "explanation": "Picking the best of several test scores turns the test set into a selection tool, so the winning score is biased upward. An honest estimate averages the candidates or selects them on training data.",
+      "source": "execution trace",
+      "impact": {
+        "mean": 0.005687810898248195,
+        "lo": 0.0032663358613129615,
+        "hi": 0.008109285935183428,
+        "status": "real",
+        "alone": 0.0030410103451861126,
+        "last": 0.008885045974507158,
+        "last_lo": 0.0002087571698363381,
+        "last_hi": 0.017561334779177977
+      },
+      "impact_text": "Fixing this lowers the AUC by 0.006 on a fair share basis (95% CI 0.003 to 0.008); 0.003 if fixed alone, 0.009 once all other leaks are fixed."
+    }
+  ],
+  "log": [
+    {
+      "stage": "intake",
+      "message": "Loaded notebook (31 lines) and hospital_readmissions.csv (2,726 rows × 15 columns)",
+      "t": 0.0
+    },
+    {
+      "stage": "reproduce",
+      "message": "Running the original experiment in the sandbox…",
+      "t": 0.0
+    },
+    {
+      "stage": "reproduce",
+      "message": "Original experiment ran in 5.0 s; captured 33 events",
+      "t": 5.1
+    },
+    {
+      "stage": "protocol",
+      "message": "Reconstructed protocol: Load data → Fit StandardScaler (all rows) → Split (train_test_split) → Fit RandomForestClassifier ×10 → Evaluate on test → keep best",
+      "t": 5.1
+    },
+    {
+      "stage": "investigate",
+      "message": "Auditing features against the prediction point using rule-based checks…",
+      "t": 5.1
+    },
+    {
+      "stage": "investigate",
+      "message": "5 potential leaks found: preprocessing fitted before the split, duplicate rows across train and test, same patient in train and test, proposed leak (suspected, not confirmed), model chosen using the test set",
+      "t": 5.1
+    },
+    {
+      "stage": "replay",
+      "message": "Checking that the protocol replays to the reported number…",
+      "t": 5.1
+    },
+    {
+      "stage": "fidelity",
+      "message": "Replayed protocol reproduces 0.9390 (notebook reported 0.9390)",
+      "t": 7.5
+    },
+    {
+      "stage": "replay",
+      "message": "Counterfactual run 96/96: fixes = duplicates+group_overlap+preprocessing+proposed_features, split seed 1004",
+      "t": 232.3,
+      "frac": 1.0
+    },
+    {
+      "stage": "repair",
+      "message": "Generating the corrected notebook…",
+      "t": 232.3
+    },
+    {
+      "stage": "repair",
+      "message": "Executing the corrected code to verify it…",
+      "t": 232.3
+    },
+    {
+      "stage": "repair",
+      "message": "Corrected code verified: 7/7 checks passed",
+      "t": 237.2
+    },
+    {
+      "stage": "survival",
+      "message": "Stability re-split 20/20",
+      "t": 242.1,
+      "frac": 1.0
+    },
+    {
+      "stage": "survival",
+      "message": "Stability re-split 20/20",
+      "t": 249.0,
+      "frac": 1.0
+    },
+    {
+      "stage": "done",
+      "message": "Verdict: Depends on review",
+      "t": 251.3
+    }
+  ],
+  "seconds": 251.3
 }

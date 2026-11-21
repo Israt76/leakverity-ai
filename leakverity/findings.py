@@ -125,7 +125,7 @@ def find(src: Source, run: RunResult, spec: Spec, audit: dict) -> list[dict]:
                             "source": "execution trace + data"})
 
     # 4. features unavailable at prediction time.
-    # A semantic judgement (AI or name rules) is a SUSPICION, not proof of timing. Only the user's
+    # A feature-name judgement is a SUSPICION, not proof of timing. Only the user's
     # confirmation makes it a definite leak (fix applied). Otherwise it becomes a PROPOSED leak: the
     # replay measures the verdict both ways (removed / kept). Strength-only flags are notes.
     for fl in audit.get("flags", []):
@@ -136,7 +136,7 @@ def find(src: Source, run: RunResult, spec: Spec, audit: dict) -> list[dict]:
             ev.append(f"On its own, `{col}` separates the two outcome classes with AUC {fl['auc']:.2f}.")
         if lines:
             ev.append(f"Selected as a model feature at {src.where(lines[0])}.")
-        source = {"ai": "AI semantic audit", "user": "confirmed by the user"}.get(fl.get("source"), "rule-based semantic audit")
+        source = "confirmed by the user" if fl.get("source") == "user" else "rule-based feature audit"
         if fl.get("review_kind") == "strength_only":
             out.append({"id": f"F{len(out) + 1}", "rule": "LV-NOTE-STRONG-FEATURE", "fix": None, "column": col, "needs_review": True,
                         "review_kind": "strength_only", "title": f"`{col}` is an unusually strong single predictor",

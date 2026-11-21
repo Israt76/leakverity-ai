@@ -1,6 +1,6 @@
 # LeakVerity benchmark
 
-24 generated studies (6 clean controls), rule-based reader (no AI key), 3 replay splits each. Ground truth = the honestly trained model evaluated on 5,000 fresh synthetic patients from the same process.
+24 generated studies (6 clean controls), rule-based feature checks, 3 replay splits each. Ground truth = the honestly trained model evaluated on 5,000 fresh synthetic patients from the same process.
 
 | Measure | Result |
 |---|---|

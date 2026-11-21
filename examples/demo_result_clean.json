@@ -1,283 +1,381 @@
 {
- "id": "LV-049A163A1B",
- "version": "1.0.0",
- "created": "2026-11-20 19:04:13 UTC",
- "inputs": {
-  "code": "readmission_model_clean.ipynb",
-  "data": "hospital_readmissions.csv",
-  "code_sha256": "1c2d855c2aea53dc781d763ad3c49106383e4aa43fcf403f2ad2f431eb08b887",
-  "data_sha256": "1e798bd4cfa3b8aaf3786356c0228dfc361522c650eee676c32af539b195d0fc"
- },
- "environment": {
-  "python": "3.13.18",
-  "scikit-learn": "1.9.1",
-  "numpy": "2.5.3",
-  "pandas": "3.0.5",
-  "scipy": "1.18.1",
-  "leakverity": "1.0.0"
- },
- "options": {
-  "target": null,
-  "group_col": null,
-  "date_col": null,
-  "subgroup_col": null,
-  "claim_text": null,
-  "prediction_point": null,
-  "n_seeds": 6,
-  "use_ai": true,
-  "provider": null,
-  "model": null,
-  "auto_roles": true,
-  "known_leaks": null,
-  "not_leaks": null,
-  "run_survival": true,
-  "timeout": 300
- },
- "source": {
-  "kind": "notebook",
-  "code": "import pandas as pd\nfrom sklearn.model_selection import GroupShuffleSplit\nfrom sklearn.pipeline import make_pipeline\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.ensemble import RandomForestClassifier\nfrom sklearn.metrics import roc_auc_score\n\ndf = pd.read_csv(\"hospital_readmissions.csv\").drop_duplicates(\"encounter_id\")\nfeatures = [\"age\", \"sex_male\", \"comorbidity_index\", \"hba1c\", \"num_prior_admissions\",\n            \"length_of_stay\", \"num_medications\", \"num_diagnoses\", \"emergency_admission\"]\nX, y = df[features], df[\"readmitted_30d\"]\n\ngss = GroupShuffleSplit(n_splits=1, test_size=0.25, random_state=42)\ntrain_idx, test_idx = next(gss.split(X, y, groups=df[\"patient_id\"]))\nmodel = make_pipeline(StandardScaler(), RandomForestClassifier(n_estimators=100, random_state=0, n_jobs=-1))\nmodel.fit(X.iloc[train_idx], y.iloc[train_idx])\nauc = roc_auc_score(y.iloc[test_idx], model.predict_proba(X.iloc[test_idx])[:, 1])\nprint(f\"Test AUC: {auc:.3f}\")\n",
-  "line_map": [
-   [
-    1,
-    1
-   ],
-   [
-    1,
-    2
-   ],
-   [
-    1,
-    3
-   ],
-   [
-    1,
-    4
-   ],
-   [
-    1,
-    5
-   ],
-   [
-    1,
-    6
-   ],
-   [
-    1,
-    7
-   ],
-   [
-    2,
-    1
-   ],
-   [
-    2,
-    2
-   ],
-   [
-    2,
-    3
-   ],
-   [
-    2,
-    4
-   ],
-   [
-    2,
-    5
-   ],
-   [
-    3,
-    1
-   ],
-   [
-    3,
-    2
-   ],
-   [
-    3,
-    3
-   ],
-   [
-    3,
-    4
-   ],
-   [
-    3,
-    5
-   ],
-   [
-    3,
-    6
-   ],
-   [
-    3,
-    7
-   ]
-  ],
-  "cells": [
-   {
-    "type": "markdown",
-    "source": "# Predicting 30-day hospital readmission (leak-free protocol)"
-   },
-   {
-    "type": "code",
-    "source": "import pandas as pd\nfrom sklearn.model_selection import GroupShuffleSplit\nfrom sklearn.pipeline import make_pipeline\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.ensemble import RandomForestClassifier\nfrom sklearn.metrics import roc_auc_score"
-   },
-   {
-    "type": "code",
-    "source": "df = pd.read_csv(\"hospital_readmissions.csv\").drop_duplicates(\"encounter_id\")\nfeatures = [\"age\", \"sex_male\", \"comorbidity_index\", \"hba1c\", \"num_prior_admissions\",\n            \"length_of_stay\", \"num_medications\", \"num_diagnoses\", \"emergency_admission\"]\nX, y = df[features], df[\"readmitted_30d\"]"
-   },
-   {
-    "type": "code",
-    "source": "gss = GroupShuffleSplit(n_splits=1, test_size=0.25, random_state=42)\ntrain_idx, test_idx = next(gss.split(X, y, groups=df[\"patient_id\"]))\nmodel = make_pipeline(StandardScaler(), RandomForestClassifier(n_estimators=100, random_state=0, n_jobs=-1))\nmodel.fit(X.iloc[train_idx], y.iloc[train_idx])\nauc = roc_auc_score(y.iloc[test_idx], model.predict_proba(X.iloc[test_idx])[:, 1])\nprint(f\"Test AUC: {auc:.3f}\")"
-   },
-   {
-    "type": "markdown",
-    "source": "## Result\n\nThe model predicts 30-day readmission with a test **AUC of 0.71**."
-   }
-  ]
- },
- "data": {
-  "rows": 2726,
-  "columns": [
-   "encounter_id",
-   "patient_id",
-   "admit_date",
-   "age",
-   "age_group",
-   "sex_male",
-   "comorbidity_index",
-   "hba1c",
-   "num_prior_admissions",
-   "length_of_stay",
-   "num_medications",
-   "num_diagnoses",
-   "emergency_admission",
-   "followup_ed_visits_30d",
-   "readmitted_30d"
-  ]
- },
- "reproduction": {
-  "ok": true,
-  "seconds": 3.0,
-  "stdout": "Test AUC: 0.715\n",
-  "error": null,
-  "metrics": [
-   {
-    "name": "roc_auc_score",
-    "value": 0.7146131279794645,
-    "line": 17,
-    "where": "cell 4, line 5"
-   }
-  ]
- },
- "trace": [
-  {
-   "type": "load",
-   "seq": 1,
-   "path": "hospital_readmissions.csv",
-   "requested": "hospital_readmissions.csv",
-   "shape": [
-    2726,
-    15
-   ],
-   "columns": [
-    "encounter_id",
-    "patient_id",
-    "admit_date",
-    "age",
-    "age_group",
-    "sex_male",
-    "comorbidity_index",
-    "hba1c",
-    "num_prior_admissions",
-    "length_of_stay",
-    "num_medications",
-    "num_diagnoses",
-    "emergency_admission",
-    "followup_ed_visits_30d",
-    "readmitted_30d"
-   ],
-   "line": 8,
-   "index_col": null,
-   "where": "cell 3, line 1"
+  "id": "LV-049A163A1B",
+  "version": "1.0.0",
+  "created": "2026-11-20 19:04:13 UTC",
+  "inputs": {
+    "code": "readmission_model_clean.ipynb",
+    "data": "hospital_readmissions.csv",
+    "code_sha256": "1c2d855c2aea53dc781d763ad3c49106383e4aa43fcf403f2ad2f431eb08b887",
+    "data_sha256": "1e798bd4cfa3b8aaf3786356c0228dfc361522c650eee676c32af539b195d0fc"
   },
-  {
-   "type": "split",
-   "seq": 2,
-   "n": 2572,
-   "n_arrays": 2,
-   "line": 14,
-   "via": "GroupShuffleSplit",
-   "n_splits": 1,
-   "test_size": 0.25,
-   "train_size": null,
-   "random_state": 42,
-   "shuffle": true,
-   "stratified": false,
-   "groups_provided": true,
-   "input_columns": [
-    "age",
-    "sex_male",
-    "comorbidity_index",
-    "hba1c",
-    "num_prior_admissions",
-    "length_of_stay",
-    "num_medications",
-    "num_diagnoses",
-    "emergency_admission"
-   ],
-   "test_rows_duplicated_in_train": 0,
-   "y_hash_test": "c2c2104529f49cb8",
-   "y_hash_train": "a87e38a737b9e04a",
-   "where": "cell 4, line 2"
+  "environment": {
+    "python": "3.13.18",
+    "scikit-learn": "1.9.1",
+    "numpy": "2.5.3",
+    "pandas": "3.0.5",
+    "scipy": "1.18.1",
+    "leakverity": "1.0.0"
   },
-  {
-   "type": "fit",
-   "seq": 3,
-   "method": "fit",
-   "class": "Pipeline",
-   "module": "sklearn.pipeline",
-   "kind": "pipeline",
-   "params": {
-    "memory": null,
-    "steps": "<list>",
-    "transform_input": null,
-    "verbose": false
-   },
-   "n_rows": 1952,
-   "n_cols": 9,
-   "columns": [
-    "age",
-    "sex_male",
-    "comorbidity_index",
-    "hba1c",
-    "num_prior_admissions",
-    "length_of_stay",
-    "num_medications",
-    "num_diagnoses",
-    "emergency_admission"
-   ],
-   "line": 16,
-   "has_y": true,
-   "y_hash": "a87e38a737b9e04a",
-   "steps": [
+  "options": {
+    "target": null,
+    "group_col": null,
+    "date_col": null,
+    "subgroup_col": null,
+    "claim_text": null,
+    "prediction_point": null,
+    "n_seeds": 6,
+    "auto_roles": true,
+    "known_leaks": null,
+    "not_leaks": null,
+    "run_survival": true,
+    "timeout": 300
+  },
+  "source": {
+    "kind": "notebook",
+    "code": "import pandas as pd\nfrom sklearn.model_selection import GroupShuffleSplit\nfrom sklearn.pipeline import make_pipeline\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.ensemble import RandomForestClassifier\nfrom sklearn.metrics import roc_auc_score\n\ndf = pd.read_csv(\"hospital_readmissions.csv\").drop_duplicates(\"encounter_id\")\nfeatures = [\"age\", \"sex_male\", \"comorbidity_index\", \"hba1c\", \"num_prior_admissions\",\n            \"length_of_stay\", \"num_medications\", \"num_diagnoses\", \"emergency_admission\"]\nX, y = df[features], df[\"readmitted_30d\"]\n\ngss = GroupShuffleSplit(n_splits=1, test_size=0.25, random_state=42)\ntrain_idx, test_idx = next(gss.split(X, y, groups=df[\"patient_id\"]))\nmodel = make_pipeline(StandardScaler(), RandomForestClassifier(n_estimators=100, random_state=0, n_jobs=-1))\nmodel.fit(X.iloc[train_idx], y.iloc[train_idx])\nauc = roc_auc_score(y.iloc[test_idx], model.predict_proba(X.iloc[test_idx])[:, 1])\nprint(f\"Test AUC: {auc:.3f}\")\n",
+    "line_map": [
+      [
+        1,
+        1
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        3
+      ],
+      [
+        1,
+        4
+      ],
+      [
+        1,
+        5
+      ],
+      [
+        1,
+        6
+      ],
+      [
+        1,
+        7
+      ],
+      [
+        2,
+        1
+      ],
+      [
+        2,
+        2
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        2,
+        4
+      ],
+      [
+        2,
+        5
+      ],
+      [
+        3,
+        1
+      ],
+      [
+        3,
+        2
+      ],
+      [
+        3,
+        3
+      ],
+      [
+        3,
+        4
+      ],
+      [
+        3,
+        5
+      ],
+      [
+        3,
+        6
+      ],
+      [
+        3,
+        7
+      ]
+    ],
+    "cells": [
+      {
+        "type": "markdown",
+        "source": "# Predicting 30-day hospital readmission (leak-free protocol)"
+      },
+      {
+        "type": "code",
+        "source": "import pandas as pd\nfrom sklearn.model_selection import GroupShuffleSplit\nfrom sklearn.pipeline import make_pipeline\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.ensemble import RandomForestClassifier\nfrom sklearn.metrics import roc_auc_score"
+      },
+      {
+        "type": "code",
+        "source": "df = pd.read_csv(\"hospital_readmissions.csv\").drop_duplicates(\"encounter_id\")\nfeatures = [\"age\", \"sex_male\", \"comorbidity_index\", \"hba1c\", \"num_prior_admissions\",\n            \"length_of_stay\", \"num_medications\", \"num_diagnoses\", \"emergency_admission\"]\nX, y = df[features], df[\"readmitted_30d\"]"
+      },
+      {
+        "type": "code",
+        "source": "gss = GroupShuffleSplit(n_splits=1, test_size=0.25, random_state=42)\ntrain_idx, test_idx = next(gss.split(X, y, groups=df[\"patient_id\"]))\nmodel = make_pipeline(StandardScaler(), RandomForestClassifier(n_estimators=100, random_state=0, n_jobs=-1))\nmodel.fit(X.iloc[train_idx], y.iloc[train_idx])\nauc = roc_auc_score(y.iloc[test_idx], model.predict_proba(X.iloc[test_idx])[:, 1])\nprint(f\"Test AUC: {auc:.3f}\")"
+      },
+      {
+        "type": "markdown",
+        "source": "## Result\n\nThe model predicts 30-day readmission with a test **AUC of 0.71**."
+      }
+    ]
+  },
+  "data": {
+    "rows": 2726,
+    "columns": [
+      "encounter_id",
+      "patient_id",
+      "admit_date",
+      "age",
+      "age_group",
+      "sex_male",
+      "comorbidity_index",
+      "hba1c",
+      "num_prior_admissions",
+      "length_of_stay",
+      "num_medications",
+      "num_diagnoses",
+      "emergency_admission",
+      "followup_ed_visits_30d",
+      "readmitted_30d"
+    ]
+  },
+  "reproduction": {
+    "ok": true,
+    "seconds": 3.0,
+    "stdout": "Test AUC: 0.715\n",
+    "error": null,
+    "metrics": [
+      {
+        "name": "roc_auc_score",
+        "value": 0.7146131279794645,
+        "line": 17,
+        "where": "cell 4, line 5"
+      }
+    ]
+  },
+  "trace": [
     {
-     "name": "standardscaler",
-     "class": "StandardScaler",
-     "kind": "transformer",
-     "params": {
-      "copy": true,
-      "with_mean": true,
-      "with_std": true
-     },
-     "module": "sklearn.preprocessing._data"
+      "type": "load",
+      "seq": 1,
+      "path": "hospital_readmissions.csv",
+      "requested": "hospital_readmissions.csv",
+      "shape": [
+        2726,
+        15
+      ],
+      "columns": [
+        "encounter_id",
+        "patient_id",
+        "admit_date",
+        "age",
+        "age_group",
+        "sex_male",
+        "comorbidity_index",
+        "hba1c",
+        "num_prior_admissions",
+        "length_of_stay",
+        "num_medications",
+        "num_diagnoses",
+        "emergency_admission",
+        "followup_ed_visits_30d",
+        "readmitted_30d"
+      ],
+      "line": 8,
+      "index_col": null,
+      "where": "cell 3, line 1"
     },
     {
-     "name": "randomforestclassifier",
-     "class": "RandomForestClassifier",
-     "kind": "model",
-     "params": {
+      "type": "split",
+      "seq": 2,
+      "n": 2572,
+      "n_arrays": 2,
+      "line": 14,
+      "via": "GroupShuffleSplit",
+      "n_splits": 1,
+      "test_size": 0.25,
+      "train_size": null,
+      "random_state": 42,
+      "shuffle": true,
+      "stratified": false,
+      "groups_provided": true,
+      "input_columns": [
+        "age",
+        "sex_male",
+        "comorbidity_index",
+        "hba1c",
+        "num_prior_admissions",
+        "length_of_stay",
+        "num_medications",
+        "num_diagnoses",
+        "emergency_admission"
+      ],
+      "test_rows_duplicated_in_train": 0,
+      "y_hash_test": "c2c2104529f49cb8",
+      "y_hash_train": "a87e38a737b9e04a",
+      "where": "cell 4, line 2"
+    },
+    {
+      "type": "fit",
+      "seq": 3,
+      "method": "fit",
+      "class": "Pipeline",
+      "module": "sklearn.pipeline",
+      "kind": "pipeline",
+      "params": {
+        "memory": null,
+        "steps": "<list>",
+        "transform_input": null,
+        "verbose": false
+      },
+      "n_rows": 1952,
+      "n_cols": 9,
+      "columns": [
+        "age",
+        "sex_male",
+        "comorbidity_index",
+        "hba1c",
+        "num_prior_admissions",
+        "length_of_stay",
+        "num_medications",
+        "num_diagnoses",
+        "emergency_admission"
+      ],
+      "line": 16,
+      "has_y": true,
+      "y_hash": "a87e38a737b9e04a",
+      "steps": [
+        {
+          "name": "standardscaler",
+          "class": "StandardScaler",
+          "kind": "transformer",
+          "params": {
+            "copy": true,
+            "with_mean": true,
+            "with_std": true
+          },
+          "module": "sklearn.preprocessing._data"
+        },
+        {
+          "name": "randomforestclassifier",
+          "class": "RandomForestClassifier",
+          "kind": "model",
+          "params": {
+            "bootstrap": true,
+            "ccp_alpha": 0.0,
+            "class_weight": null,
+            "criterion": "gini",
+            "max_depth": null,
+            "max_features": "sqrt",
+            "max_leaf_nodes": null,
+            "max_samples": null,
+            "min_impurity_decrease": 0.0,
+            "min_samples_leaf": 1,
+            "min_samples_split": 2,
+            "min_weight_fraction_leaf": 0.0,
+            "monotonic_cst": null,
+            "n_estimators": 100,
+            "n_jobs": -1,
+            "oob_score": false,
+            "random_state": 0,
+            "verbose": 0,
+            "warm_start": false
+          },
+          "module": "sklearn.ensemble._forest"
+        }
+      ],
+      "rows_in_test": 0,
+      "rows_in_train": 1952,
+      "where": "cell 4, line 4"
+    },
+    {
+      "type": "predict",
+      "seq": 4,
+      "method": "predict_proba",
+      "class": "Pipeline",
+      "n_rows": 620,
+      "line": 17,
+      "rows_in_test": 620,
+      "rows_in_train": 0,
+      "where": "cell 4, line 5"
+    },
+    {
+      "type": "metric",
+      "seq": 5,
+      "name": "roc_auc_score",
+      "value": 0.7146131279794645,
+      "n": 620,
+      "y_hash": "c2c2104529f49cb8",
+      "line": 17,
+      "where": "cell 4, line 5"
+    }
+  ],
+  "roles": {
+    "target": "readmitted_30d",
+    "group": "patient_id",
+    "date": "admit_date",
+    "subgroup": "age_group",
+    "auto": {
+      "group": true,
+      "date": true,
+      "subgroup": true
+    }
+  },
+  "claim": {
+    "text": "The model predicts 30-day readmission with a test AUC of 0.71.",
+    "metric": "roc_auc_score",
+    "value": 0.71,
+    "general": false,
+    "source": "notebook text"
+  },
+  "protocol": {
+    "supported": true,
+    "metric": "roc_auc_score",
+    "metric_label": "AUC",
+    "reported": 0.7146131279794645,
+    "reported_where": "cell 4, line 5",
+    "split": {
+      "type": "split",
+      "seq": 2,
+      "n": 2572,
+      "n_arrays": 2,
+      "line": 14,
+      "via": "GroupShuffleSplit",
+      "n_splits": 1,
+      "test_size": 0.25,
+      "train_size": null,
+      "random_state": 42,
+      "shuffle": true,
+      "stratified": false,
+      "groups_provided": true,
+      "test_rows_duplicated_in_train": 0,
+      "y_hash_test": "c2c2104529f49cb8",
+      "y_hash_train": "a87e38a737b9e04a",
+      "where": "cell 4, line 2"
+    },
+    "pre_split_steps": [],
+    "post_split_steps": [
+      {
+        "class": "StandardScaler",
+        "kind": "transformer"
+      }
+    ],
+    "model": "RandomForestClassifier",
+    "model_params": {
       "bootstrap": true,
       "ccp_alpha": 0.0,
       "class_weight": null,
@@ -297,471 +395,365 @@
       "random_state": 0,
       "verbose": 0,
       "warm_start": false
-     },
-     "module": "sklearn.ensemble._forest"
-    }
-   ],
-   "rows_in_test": 0,
-   "rows_in_train": 1952,
-   "where": "cell 4, line 4"
+    },
+    "candidates": 1,
+    "selection": "none",
+    "features": [
+      "age",
+      "sex_male",
+      "comorbidity_index",
+      "hba1c",
+      "num_prior_admissions",
+      "length_of_stay",
+      "num_medications",
+      "num_diagnoses",
+      "emergency_admission"
+    ],
+    "n_train": 1952,
+    "n_test": 620,
+    "prevalence": 0.328149300155521,
+    "flow": [
+      "Load data",
+      "Split (GroupShuffleSplit)",
+      "Fit StandardScaler (train)",
+      "Fit RandomForestClassifier",
+      "Evaluate on test"
+    ]
   },
-  {
-   "type": "predict",
-   "seq": 4,
-   "method": "predict_proba",
-   "class": "Pipeline",
-   "n_rows": 620,
-   "line": 17,
-   "rows_in_test": 620,
-   "rows_in_train": 0,
-   "where": "cell 4, line 5"
+  "feature_audit": {
+    "flags": [],
+    "source": "rules",
+    "prediction_point": null,
+    "columns": [
+      {
+        "column": "age",
+        "dtype": "int64",
+        "examples": "56, 69, 74, 70",
+        "auc": 0.5630989309066174
+      },
+      {
+        "column": "sex_male",
+        "dtype": "int64",
+        "examples": "1, 0",
+        "auc": 0.5036395251886958
+      },
+      {
+        "column": "comorbidity_index",
+        "dtype": "int64",
+        "examples": "1, 7, 3, 5",
+        "auc": 0.6611830376733369
+      },
+      {
+        "column": "hba1c",
+        "dtype": "float64",
+        "examples": "5.9, 6.8, 5.2, 6.3",
+        "auc": 0.6118204345488854
+      },
+      {
+        "column": "num_prior_admissions",
+        "dtype": "int64",
+        "examples": "4, 2, 0, 1",
+        "auc": 0.6482074584210988
+      },
+      {
+        "column": "length_of_stay",
+        "dtype": "int64",
+        "examples": "3, 7, 1, 6",
+        "auc": 0.6254988233938916
+      },
+      {
+        "column": "num_medications",
+        "dtype": "int64",
+        "examples": "13, 17, 7, 6",
+        "auc": 0.6414419732973494
+      },
+      {
+        "column": "num_diagnoses",
+        "dtype": "int64",
+        "examples": "7, 14, 9, 6",
+        "auc": 0.595174817886607
+      },
+      {
+        "column": "emergency_admission",
+        "dtype": "int64",
+        "examples": "0, 1",
+        "auc": 0.5590894878883623
+      }
+    ],
+    "target": "readmitted_30d"
   },
-  {
-   "type": "metric",
-   "seq": 5,
-   "name": "roc_auc_score",
-   "value": 0.7146131279794645,
-   "n": 620,
-   "y_hash": "c2c2104529f49cb8",
-   "line": 17,
-   "where": "cell 4, line 5"
-  }
- ],
- "ai": {
-  "enabled": false,
-  "provider": null,
-  "model": null
- },
- "roles": {
-  "target": "readmitted_30d",
-  "group": "patient_id",
-  "date": "admit_date",
-  "subgroup": "age_group",
-  "auto": {
-   "group": true,
-   "date": true,
-   "subgroup": true
-  }
- },
- "claim": {
-  "text": "The model predicts 30-day readmission with a test AUC of 0.71.",
-  "metric": "roc_auc_score",
-  "value": 0.71,
-  "general": false,
-  "source": "notebook text"
- },
- "protocol": {
-  "supported": true,
-  "metric": "roc_auc_score",
-  "metric_label": "AUC",
-  "reported": 0.7146131279794645,
-  "reported_where": "cell 4, line 5",
-  "split": {
-   "type": "split",
-   "seq": 2,
-   "n": 2572,
-   "n_arrays": 2,
-   "line": 14,
-   "via": "GroupShuffleSplit",
-   "n_splits": 1,
-   "test_size": 0.25,
-   "train_size": null,
-   "random_state": 42,
-   "shuffle": true,
-   "stratified": false,
-   "groups_provided": true,
-   "test_rows_duplicated_in_train": 0,
-   "y_hash_test": "c2c2104529f49cb8",
-   "y_hash_train": "a87e38a737b9e04a",
-   "where": "cell 4, line 2"
+  "replay": {
+    "fidelity_ok": true,
+    "fidelity_value": 0.7146131279794645,
+    "reported": 0.7146131279794645,
+    "fixes": [],
+    "seeds": [
+      42,
+      1000,
+      1001,
+      1002,
+      1003,
+      1004
+    ],
+    "table": {
+      "none": [
+        0.7146131279794645,
+        0.6856783919597991,
+        0.7262506203789721,
+        0.7315574712643678,
+        0.7166107048973911,
+        0.6924970145341217
+      ]
+    },
+    "attribution": {},
+    "original": {
+      "mean": 0.7112012218356861,
+      "lo": 0.6777983789498294,
+      "hi": 0.7429848542041722,
+      "sd": 0.018346809605484845,
+      "values": [
+        0.7146131279794645,
+        0.6856783919597991,
+        0.7262506203789721,
+        0.7315574712643678,
+        0.7166107048973911,
+        0.6924970145341217
+      ]
+    },
+    "corrected": {
+      "mean": 0.7112012218356861,
+      "lo": 0.6777983789498294,
+      "hi": 0.7429848542041722,
+      "sd": 0.018346809605484845,
+      "values": [
+        0.7146131279794645,
+        0.6856783919597991,
+        0.7262506203789721,
+        0.7315574712643678,
+        0.7166107048973911,
+        0.6924970145341217
+      ]
+    },
+    "inflation": {
+      "mean": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "lo_one_sided": 0.0,
+      "values": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "from_reported": 0.003411906143778398
+    },
+    "waterfall": [
+      {
+        "label": "Reported in notebook",
+        "value": 0.7146131279794645
+      },
+      {
+        "label": "Favourable split (luck of one seed)",
+        "delta": -0.003411906143778398
+      },
+      {
+        "label": "Verified estimate",
+        "value": 0.7112012218356861
+      }
+    ],
+    "seconds": 1.4,
+    "runs": 6,
+    "n_train": 1952,
+    "n_test": 620,
+    "legit_scenario": null,
+    "proposed": []
   },
-  "pre_split_steps": [],
-  "post_split_steps": [
-   {
-    "class": "StandardScaler",
-    "kind": "transformer"
-   }
-  ],
-  "model": "RandomForestClassifier",
-  "model_params": {
-   "bootstrap": true,
-   "ccp_alpha": 0.0,
-   "class_weight": null,
-   "criterion": "gini",
-   "max_depth": null,
-   "max_features": "sqrt",
-   "max_leaf_nodes": null,
-   "max_samples": null,
-   "min_impurity_decrease": 0.0,
-   "min_samples_leaf": 1,
-   "min_samples_split": 2,
-   "min_weight_fraction_leaf": 0.0,
-   "monotonic_cst": null,
-   "n_estimators": 100,
-   "n_jobs": -1,
-   "oob_score": false,
-   "random_state": 0,
-   "verbose": 0,
-   "warm_start": false
+  "repair": {
+    "ok": false,
+    "none_needed": true,
+    "reason": "No leaks were found, so the protocol needs no changes."
   },
-  "candidates": 1,
-  "selection": "none",
-  "features": [
-   "age",
-   "sex_male",
-   "comorbidity_index",
-   "hba1c",
-   "num_prior_admissions",
-   "length_of_stay",
-   "num_medications",
-   "num_diagnoses",
-   "emergency_admission"
-  ],
-  "n_train": 1952,
-  "n_test": 620,
-  "prevalence": 0.328149300155521,
-  "flow": [
-   "Load data",
-   "Split (GroupShuffleSplit)",
-   "Fit StandardScaler (train)",
-   "Fit RandomForestClassifier",
-   "Evaluate on test"
-  ]
- },
- "feature_audit": {
-  "flags": [],
-  "source": "rules",
-  "prediction_point": null,
-  "columns": [
-   {
-    "column": "age",
-    "dtype": "int64",
-    "examples": "56, 69, 74, 70",
-    "auc": 0.5630989309066174
-   },
-   {
-    "column": "sex_male",
-    "dtype": "int64",
-    "examples": "1, 0",
-    "auc": 0.5036395251886958
-   },
-   {
-    "column": "comorbidity_index",
-    "dtype": "int64",
-    "examples": "1, 7, 3, 5",
-    "auc": 0.6611830376733369
-   },
-   {
-    "column": "hba1c",
-    "dtype": "float64",
-    "examples": "5.9, 6.8, 5.2, 6.3",
-    "auc": 0.6118204345488854
-   },
-   {
-    "column": "num_prior_admissions",
-    "dtype": "int64",
-    "examples": "4, 2, 0, 1",
-    "auc": 0.6482074584210988
-   },
-   {
-    "column": "length_of_stay",
-    "dtype": "int64",
-    "examples": "3, 7, 1, 6",
-    "auc": 0.6254988233938916
-   },
-   {
-    "column": "num_medications",
-    "dtype": "int64",
-    "examples": "13, 17, 7, 6",
-    "auc": 0.6414419732973494
-   },
-   {
-    "column": "num_diagnoses",
-    "dtype": "int64",
-    "examples": "7, 14, 9, 6",
-    "auc": 0.595174817886607
-   },
-   {
-    "column": "emergency_admission",
-    "dtype": "int64",
-    "examples": "0, 1",
-    "auc": 0.5590894878883623
-   }
-  ],
-  "target": "readmitted_30d"
- },
- "replay": {
-  "fidelity_ok": true,
-  "fidelity_value": 0.7146131279794645,
-  "reported": 0.7146131279794645,
-  "fixes": [],
-  "seeds": [
-   42,
-   1000,
-   1001,
-   1002,
-   1003,
-   1004
-  ],
-  "table": {
-   "none": [
-    0.7146131279794645,
-    0.6856783919597991,
-    0.7262506203789721,
-    0.7315574712643678,
-    0.7166107048973911,
-    0.6924970145341217
-   ]
+  "survival": {
+    "stability": {
+      "name": "Seed and split stability",
+      "runs": 20,
+      "mean": 0.7023705345192773,
+      "lo": 0.6728954713695425,
+      "hi": 0.7311152602091187,
+      "sd": 0.02212637245315859,
+      "min": 0.6678281672560848,
+      "max": 0.7436311955942441,
+      "values": [
+        0.7380766053649841,
+        0.7110307548532347,
+        0.7004500490152392,
+        0.7236287136861164,
+        0.7105714285714286,
+        0.6762495969042244,
+        0.709461660152615,
+        0.6784741866107279,
+        0.676566229632961,
+        0.7324200281371802,
+        0.7436311955942441,
+        0.6678281672560848,
+        0.7044102043640725,
+        0.6988782316871064,
+        0.7130036269249933,
+        0.6818555008210181,
+        0.6980128613637681,
+        0.7127959847120326,
+        0.6712135788894996,
+        0.6988520858440151
+      ],
+      "selection": "The single model from the notebook is evaluated.",
+      "status": "pass",
+      "rule": "Pass if the standard deviation across 20 re-splits is at most 0.03."
+    },
+    "subgroup": {
+      "name": "Subgroup performance",
+      "column": "age_group",
+      "overall": 0.7023705345192773,
+      "groups": [
+        {
+          "level": "18-64",
+          "n": 334,
+          "pos": 129,
+          "unique": 832,
+          "mean": 0.7542475677647538,
+          "lo": 0.7169405934438408,
+          "hi": 0.7899172593580436,
+          "status": "pass"
+        },
+        {
+          "level": "65+",
+          "n": 303,
+          "pos": 80,
+          "unique": 766,
+          "mean": 0.6040836902247027,
+          "lo": 0.5652692814553976,
+          "hi": 0.6423450544404524,
+          "status": "concern"
+        }
+      ],
+      "status": "concern",
+      "rule": "Concern if a subgroup's AUC is more than 0.05 below overall and its CI excludes the overall value."
+    },
+    "temporal": {
+      "name": "Time-based validation",
+      "column": "admit_date",
+      "cutoff": "2025-03-21",
+      "value": 0.7336461226634637,
+      "random_split": 0.7023705345192773,
+      "n_train": 1927,
+      "n_test": 558,
+      "status": "pass",
+      "rule": "Train on records before the cutoff, test on later records (new patient_id only). Concern if more than 0.03 below the random-split estimate."
+    },
+    "limitations": "These tests re-split the same dataset, so the 20 splits overlap and are not independent samples; they probe robustness under the corrected protocol, not generalisation to new sites, populations or time periods. Thresholds are fixed in advance; a pass means no problem was found, not that none exists. Tests with too few cases are reported as inconclusive."
   },
-  "attribution": {},
-  "original": {
-   "mean": 0.7112012218356861,
-   "lo": 0.6777983789498294,
-   "hi": 0.7429848542041722,
-   "sd": 0.018346809605484845,
-   "values": [
-    0.7146131279794645,
-    0.6856783919597991,
-    0.7262506203789721,
-    0.7315574712643678,
-    0.7166107048973911,
-    0.6924970145341217
-   ]
+  "verdict": {
+    "verdict": "Supported",
+    "reason": "The claimed AUC of 0.710 is consistent with the verified estimate 0.711 (95% CI 0.678–0.743). It holds with caveats: Lower performance in age_group = 65+ (0.604) versus 0.702 overall.",
+    "concerns": [
+      "subgroup"
+    ],
+    "caveats": [
+      {
+        "test": "subgroup",
+        "text": "Lower performance in age_group = 65+ (0.604) versus 0.702 overall.",
+        "contradicts_claim": false
+      }
+    ],
+    "chance": 0.5,
+    "rules": [
+      [
+        "Supported",
+        "The claimed value is within the verified 95% CI (plus 0.01), there is no reliable paired inflation, the corrected CI excludes chance, and no survival test fails against the claim's stated scope. Other survival concerns are listed as caveats."
+      ],
+      [
+        "Overstated",
+        "The claim does not survive but signal remains (the corrected CI excludes chance, or its point estimate is more than 0.05 above chance): it is above the verified 95% CI (plus 0.01), or the paired inflation across splits has a one-sided 95% lower bound above 0.01 and the claim exceeds the verified mean by more than 0.02, or a survival test fails against the claim's scope (instability while the claim exceeds the verified mean; a subgroup or time-based failure for a general claim)."
+      ],
+      [
+        "Contradicted",
+        "The claimed value is ruled out (above the verified 95% CI plus 0.01), the corrected CI includes chance, AND the corrected point estimate is within 0.05 of chance: the reported result does not stand and the corrected evidence points to no meaningful signal. This is not proof that the model has none."
+      ],
+      [
+        "Insufficient evidence",
+        "The protocol could not be replayed faithfully or verified; or the corrected estimate is too uncertain to either confirm or rule out the claim (its CI includes both the claim and chance)."
+      ],
+      [
+        "Depends on review",
+        "A proposed leak (a suspicion from a feature's meaning or from code that mixes rows, without proof of timing) changes the verdict: the claim is evaluated with the feature removed and kept, and the two verdicts differ. Confirming or rejecting the feature settles it. When both verdicts agree, that verdict is issued and the certificate says it holds either way."
+      ]
+    ]
   },
-  "corrected": {
-   "mean": 0.7112012218356861,
-   "lo": 0.6777983789498294,
-   "hi": 0.7429848542041722,
-   "sd": 0.018346809605484845,
-   "values": [
-    0.7146131279794645,
-    0.6856783919597991,
-    0.7262506203789721,
-    0.7315574712643678,
-    0.7166107048973911,
-    0.6924970145341217
-   ]
-  },
-  "inflation": {
-   "mean": 0.0,
-   "lo": 0.0,
-   "hi": 0.0,
-   "lo_one_sided": 0.0,
-   "values": [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0
-   ],
-   "from_reported": 0.003411906143778398
-  },
-  "waterfall": [
-   {
-    "label": "Reported in notebook",
-    "value": 0.7146131279794645
-   },
-   {
-    "label": "Favourable split (luck of one seed)",
-    "delta": -0.003411906143778398
-   },
-   {
-    "label": "Verified estimate",
-    "value": 0.7112012218356861
-   }
-  ],
-  "seconds": 1.4,
-  "runs": 6,
-  "n_train": 1952,
-  "n_test": 620,
-  "legit_scenario": null,
-  "proposed": []
- },
- "repair": {
-  "ok": false,
-  "none_needed": true,
-  "reason": "No leaks were found, so the protocol needs no changes."
- },
- "survival": {
-  "stability": {
-   "name": "Seed and split stability",
-   "runs": 20,
-   "mean": 0.7023705345192773,
-   "lo": 0.6728954713695425,
-   "hi": 0.7311152602091187,
-   "sd": 0.02212637245315859,
-   "min": 0.6678281672560848,
-   "max": 0.7436311955942441,
-   "values": [
-    0.7380766053649841,
-    0.7110307548532347,
-    0.7004500490152392,
-    0.7236287136861164,
-    0.7105714285714286,
-    0.6762495969042244,
-    0.709461660152615,
-    0.6784741866107279,
-    0.676566229632961,
-    0.7324200281371802,
-    0.7436311955942441,
-    0.6678281672560848,
-    0.7044102043640725,
-    0.6988782316871064,
-    0.7130036269249933,
-    0.6818555008210181,
-    0.6980128613637681,
-    0.7127959847120326,
-    0.6712135788894996,
-    0.6988520858440151
-   ],
-   "selection": "The single model from the notebook is evaluated.",
-   "status": "pass",
-   "rule": "Pass if the standard deviation across 20 re-splits is at most 0.03."
-  },
-  "subgroup": {
-   "name": "Subgroup performance",
-   "column": "age_group",
-   "overall": 0.7023705345192773,
-   "groups": [
+  "findings": [],
+  "log": [
     {
-     "level": "18-64",
-     "n": 334,
-     "pos": 129,
-     "unique": 832,
-     "mean": 0.7542475677647538,
-     "lo": 0.7169405934438408,
-     "hi": 0.7899172593580436,
-     "status": "pass"
+      "stage": "intake",
+      "message": "Loaded notebook (19 lines) and hospital_readmissions.csv (2,726 rows × 15 columns)",
+      "t": 0.0
     },
     {
-     "level": "65+",
-     "n": 303,
-     "pos": 80,
-     "unique": 766,
-     "mean": 0.6040836902247027,
-     "lo": 0.5652692814553976,
-     "hi": 0.6423450544404524,
-     "status": "concern"
+      "stage": "reproduce",
+      "message": "Running the original experiment in the sandbox…",
+      "t": 0.0
+    },
+    {
+      "stage": "reproduce",
+      "message": "Original experiment ran in 3.0 s; captured 5 events",
+      "t": 3.0
+    },
+    {
+      "stage": "protocol",
+      "message": "Reconstructed protocol: Load data → Split (GroupShuffleSplit) → Fit StandardScaler (train) → Fit RandomForestClassifier → Evaluate on test",
+      "t": 3.0
+    },
+    {
+      "stage": "investigate",
+      "message": "Auditing features against the prediction point using rule-based checks…",
+      "t": 3.0
+    },
+    {
+      "stage": "investigate",
+      "message": "0 potential leaks found: none",
+      "t": 3.1
+    },
+    {
+      "stage": "replay",
+      "message": "Checking that the protocol replays to the reported number…",
+      "t": 3.1
+    },
+    {
+      "stage": "fidelity",
+      "message": "Replayed protocol reproduces 0.7146 (notebook reported 0.7146)",
+      "t": 3.3
+    },
+    {
+      "stage": "replay",
+      "message": "Counterfactual run 6/6: fixes = none, split seed 1004",
+      "t": 4.5,
+      "frac": 1.0
+    },
+    {
+      "stage": "repair",
+      "message": "Generating the corrected notebook…",
+      "t": 4.5
+    },
+    {
+      "stage": "survival",
+      "message": "Stability re-split 20/20",
+      "t": 9.4,
+      "frac": 1.0
+    },
+    {
+      "stage": "done",
+      "message": "Verdict: Supported",
+      "t": 9.7
     }
-   ],
-   "status": "concern",
-   "rule": "Concern if a subgroup's AUC is more than 0.05 below overall and its CI excludes the overall value."
-  },
-  "temporal": {
-   "name": "Time-based validation",
-   "column": "admit_date",
-   "cutoff": "2025-03-21",
-   "value": 0.7336461226634637,
-   "random_split": 0.7023705345192773,
-   "n_train": 1927,
-   "n_test": 558,
-   "status": "pass",
-   "rule": "Train on records before the cutoff, test on later records (new patient_id only). Concern if more than 0.03 below the random-split estimate."
-  },
-  "limitations": "These tests re-split the same dataset, so the 20 splits overlap and are not independent samples; they probe robustness under the corrected protocol, not generalisation to new sites, populations or time periods. Thresholds are fixed in advance; a pass means no problem was found, not that none exists. Tests with too few cases are reported as inconclusive."
- },
- "verdict": {
-  "verdict": "Supported",
-  "reason": "The claimed AUC of 0.710 is consistent with the verified estimate 0.711 (95% CI 0.678\u20130.743). It holds with caveats: Lower performance in age_group = 65+ (0.604) versus 0.702 overall.",
-  "concerns": [
-   "subgroup"
   ],
-  "caveats": [
-   {
-    "test": "subgroup",
-    "text": "Lower performance in age_group = 65+ (0.604) versus 0.702 overall.",
-    "contradicts_claim": false
-   }
-  ],
-  "chance": 0.5,
-  "rules": [
-   [
-    "Supported",
-    "The claimed value is within the verified 95% CI (plus 0.01), there is no reliable paired inflation, the corrected CI excludes chance, and no survival test fails against the claim's stated scope. Other survival concerns are listed as caveats."
-   ],
-   [
-    "Overstated",
-    "The claim does not survive but signal remains (the corrected CI excludes chance, or its point estimate is more than 0.05 above chance): it is above the verified 95% CI (plus 0.01), or the paired inflation across splits has a one-sided 95% lower bound above 0.01 and the claim exceeds the verified mean by more than 0.02, or a survival test fails against the claim's scope (instability while the claim exceeds the verified mean; a subgroup or time-based failure for a general claim)."
-   ],
-   [
-    "Contradicted",
-    "The claimed value is ruled out (above the verified 95% CI plus 0.01), the corrected CI includes chance, AND the corrected point estimate is within 0.05 of chance: the reported result does not stand and the corrected evidence points to no meaningful signal. This is not proof that the model has none."
-   ],
-   [
-    "Insufficient evidence",
-    "The protocol could not be replayed faithfully or verified; or the corrected estimate is too uncertain to either confirm or rule out the claim (its CI includes both the claim and chance)."
-   ],
-   [
-    "Depends on review",
-    "A proposed leak (a suspicion from a feature's meaning or from code that mixes rows, without proof of timing) changes the verdict: the claim is evaluated with the feature removed and kept, and the two verdicts differ. Confirming or rejecting the feature settles it. When both verdicts agree, that verdict is issued and the certificate says it holds either way."
-   ]
-  ]
- },
- "findings": [],
- "log": [
-  {
-   "stage": "intake",
-   "message": "Loaded notebook (19 lines) and hospital_readmissions.csv (2,726 rows \u00d7 15 columns)",
-   "t": 0.0
-  },
-  {
-   "stage": "reproduce",
-   "message": "Running the original experiment in the sandbox\u2026",
-   "t": 0.0
-  },
-  {
-   "stage": "reproduce",
-   "message": "Original experiment ran in 3.0 s; captured 5 events",
-   "t": 3.0
-  },
-  {
-   "stage": "protocol",
-   "message": "Reconstructed protocol: Load data \u2192 Split (GroupShuffleSplit) \u2192 Fit StandardScaler (train) \u2192 Fit RandomForestClassifier \u2192 Evaluate on test",
-   "t": 3.0
-  },
-  {
-   "stage": "investigate",
-   "message": "Auditing features against the prediction point (rule-based)\u2026",
-   "t": 3.0
-  },
-  {
-   "stage": "investigate",
-   "message": "0 potential leaks found: none",
-   "t": 3.1
-  },
-  {
-   "stage": "replay",
-   "message": "Checking that the protocol replays to the reported number\u2026",
-   "t": 3.1
-  },
-  {
-   "stage": "fidelity",
-   "message": "Replayed protocol reproduces 0.7146 (notebook reported 0.7146)",
-   "t": 3.3
-  },
-  {
-   "stage": "replay",
-   "message": "Counterfactual run 6/6: fixes = none, split seed 1004",
-   "t": 4.5,
-   "frac": 1.0
-  },
-  {
-   "stage": "repair",
-   "message": "Generating the corrected notebook\u2026",
-   "t": 4.5
-  },
-  {
-   "stage": "survival",
-   "message": "Stability re-split 20/20",
-   "t": 9.4,
-   "frac": 1.0
-  },
-  {
-   "stage": "done",
-   "message": "Verdict: Supported",
-   "t": 9.7
-  }
- ],
- "seconds": 9.7
+  "seconds": 9.7
 }

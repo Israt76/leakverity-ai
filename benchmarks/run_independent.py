@@ -61,7 +61,7 @@ def main():
     rows = []
     for case, (data, expected, verdicts, what) in CASES.items():
         code = (IND / "cases" / f"{case}.py").read_bytes()
-        r = audit(f"{case}.py", code, data, (IND / data).read_bytes(), Options(n_seeds=3, use_ai=False))
+        r = audit(f"{case}.py", code, data, (IND / data).read_bytes(), Options(n_seeds=3))
         found = {f["fix"] for f in r.get("findings", []) if f.get("fix")}
         review = sorted(f["column"] for f in r.get("findings", []) if f.get("needs_review"))
         v = (r.get("verdict") or {}).get("verdict")

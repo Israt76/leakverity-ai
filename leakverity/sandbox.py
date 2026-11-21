@@ -4,7 +4,7 @@ Isolation used on hosted demos (where containers are not available):
   * separate process, isolated interpreter (-I), throwaway working directory
   * network sockets disabled inside the process
   * CPU-time, address-space and file-size limits; wall-clock timeout
-  * minimal environment (no API keys or secrets are passed through)
+  * minimal environment (no private environment variables or secrets are passed through)
 For production, run the same entrypoint inside a disposable container with
 `--network none` (see Dockerfile.sandbox and docs/security.md).
 """

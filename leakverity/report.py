@@ -147,7 +147,7 @@ td{{border-bottom:1px solid var(--rule);padding:8px 8px 8px 0;vertical-align:top
 @media print{{body{{background:#fff}}.sheet{{margin:0;border:0;padding:24px}}}}
 @media (max-width:720px){{.sheet{{padding:24px}}.grid{{grid-template-columns:1fr}}}}
 </style></head><body><main class="sheet">
-<h1>LeakVerity AI · Claim Survival Certificate</h1>
+<h1>LeakVerity · Claim Survival Certificate</h1>
 <p class="claim">“{_e(claim.get('text') or f"Reported {label}: {_f(proto.get('reported'))}")}”</p>
 <div class="meta">{_e(inputs.get('code'))} with {_e(inputs.get('data'))} · certificate {_e(r.get('id'))} · {_e(r.get('created'))}</div>
 <div class="stamp">{_e(verdict)}{' (provisional)' if v.get('provisional') else ''}{' (conditional)' if v.get('conditional') else ''}</div>
@@ -176,7 +176,7 @@ Rows marked "protocol change" alter which rows are in the test set: their share 
 <div class="kv"><span>Notebook SHA-256</span><b>{_e(inputs.get('code_sha256'))}</b><span>Data SHA-256</span><b>{_e(inputs.get('data_sha256'))}</b>
 <span>Protocol</span><b>{_e(' → '.join(proto.get('flow') or []))}</b><span>Split</span><b>{_e(split.get('via', 'train_test_split'))}, test size {_e(split.get('test_size'))}, seed {_e(split.get('random_state'))}, seeds replayed {_e(rp.get('seeds'))}</b>
 <span>Model</span><b>{_e(proto.get('model'))} · {_e(json.dumps(proto.get('model_params')))}</b><span>Environment</span><b>{_e(', '.join(f'{k} {v}' for k, v in env.items()))}</b>
-<span>AI</span><b>{_e(('enabled: ' + str((r.get('ai') or {}).get('model'))) if (r.get('ai') or {}).get('enabled') else 'rule-based fallback (no API key)')}; AI never produces numbers</b></div>
+</div>
 <h2>Verdict rules (fixed before analysis)</h2>
 <div class="rules">{''.join(f'<p><b>{_e(a)}.</b> {_e(b)}</p>' for a, b in (v.get('rules') or []))}</div>
 </main></body></html>"""

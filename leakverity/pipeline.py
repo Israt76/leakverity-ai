@@ -28,10 +28,6 @@ class Options:
     claim_text: str | None = None
     prediction_point: str | None = None
     n_seeds: int = 3
-    use_ai: bool = True
-    provider: str | None = None
-    api_key: str | None = None
-    model: str | None = None
     auto_roles: bool = True
     known_leaks: list | None = None        # features the user confirms are unavailable at prediction time
     not_leaks: list | None = None          # features the user confirms are legitimate
@@ -90,7 +86,7 @@ def audit(code_name: str, code_bytes: bytes, data_name: str, data_bytes: bytes, 
     prog = Progress(on_progress)
     result: dict = {"id": "LV-" + uuid.uuid4().hex[:10].upper(), "version": __version__, "created": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()),
                     "inputs": {"code": code_name, "data": data_name, "code_sha256": _sha(code_bytes), "data_sha256": _sha(data_bytes)},
-                    "environment": _versions(), "options": {k: v for k, v in vars(opts).items() if k != "api_key"}}
+                    "environment": _versions(), "options": vars(opts).copy()}
 
     # 1. intake -----------------------------------------------------------------
     src = ingest.load(code_name, code_bytes)
@@ -113,8 +109,6 @@ def audit(code_name: str, code_bytes: bytes, data_name: str, data_bytes: bytes, 
                        for e in run.events]
 
     # 3. protocol -------------------------------------------------------------------
-    llm = semantic.get_llm(opts.provider, opts.api_key, opts.model) if opts.use_ai else None
-    result["ai"] = {"enabled": llm is not None, "provider": getattr(llm, "provider", None), "model": getattr(llm, "model", None)}
     split = run.split()
     target = opts.target
     if target is None and run.design is not None:
@@ -143,7 +137,7 @@ def audit(code_name: str, code_bytes: bytes, data_name: str, data_bytes: bytes, 
     claim_src = opts.claim_text or src.markdown
     try:
         reported_guess = max((m["value"] for m in run.metrics()), default=None)
-        pre_claim = semantic.extract_claim(claim_src, None, reported_guess, llm)
+        pre_claim = semantic.extract_claim(claim_src, None, reported_guess)
         sp = build_spec(run, raw, group_col, date_col, subgroup_col,
                         claimed_value=pre_claim["value"] if pre_claim.get("source") != "trace" else None,
                         claimed_metric=pre_claim.get("metric") if pre_claim.get("source") != "trace" else None)
@@ -153,7 +147,7 @@ def audit(code_name: str, code_bytes: bytes, data_name: str, data_bytes: bytes, 
         result["verdict"] = verdict.decide({}, None, None, "", 0.5, abstain_reason=str(e))
         result["log"] = prog.log
         return _clean(result)
-    claim = semantic.extract_claim(claim_src, sp.metric, sp.reported, llm)
+    claim = semantic.extract_claim(claim_src, sp.metric, sp.reported)
     if claim.get("value") is None:
         claim["value"] = sp.reported
     result["claim"] = claim
@@ -171,8 +165,8 @@ def audit(code_name: str, code_bytes: bytes, data_name: str, data_bytes: bytes, 
     prog("protocol", f"Reconstructed protocol: {' → '.join(flow)}")
 
     # 4. investigate ------------------------------------------------------------------
-    prog("investigate", "Auditing features against the prediction point" + (" with AI…" if llm else " (rule-based)…"))
-    audit_res = semantic.audit_features(sp.design, sp.y, target or "target", opts.prediction_point, llm)
+    prog("investigate", "Checking features against the prediction point using evidence-based rules…")
+    audit_res = semantic.audit_features(sp.design, sp.y, target or "target", opts.prediction_point)
     known = [c for c in (opts.known_leaks or []) if c in sp.design.columns]
     legit = set(opts.not_leaks or [])
     audit_res["flags"] = [f for f in audit_res["flags"] if f["column"] not in legit and f["column"] not in known]
@@ -281,13 +275,6 @@ def audit(code_name: str, code_bytes: bytes, data_name: str, data_bytes: bytes, 
     result["verdict"] = v
     result["findings"] = finds
 
-    # 9. AI explanations (guarded) ------------------------------------------------------
-    if llm is not None:
-        try:
-            r = semantic.explain(finds, llm)
-            prog("explain", f"AI explanations: {r['rewritten']} accepted, {r['rejected']} rejected by the number guard")
-        except Exception as e:  # noqa: BLE001
-            prog("explain", f"AI explanations skipped: {str(e)[:100]}")
     prog("done", f"Verdict: {v['verdict']}")
     result["log"] = prog.log
     result["seconds"] = round(time.time() - prog.t0, 1)

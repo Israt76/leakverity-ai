@@ -4,7 +4,7 @@ LeakVerity did not invent leakage detection, automated fixes, or the idea of mea
 
 - **Yang, Brower-Sinning, Lewis & Kästner (ASE 2022), *Data Leakage in Notebooks: Static Detection and Better Processes*.** Static analysis of overlap, preprocessing and multi-test leakage; found leakage pervasive across 100,000+ public notebooks.
 - **Subotić et al. (ICSE-SEIP 2022; SOAP 2022) and Drobnjaković, Subotić & Urban (2022).** NBLyzer and an abstract-interpretation leakage analysis for notebooks.
-- **LeakageDetector 2.0 (Stevens Institute of Technology, ICSME 2025 tool track).** A VS Code extension that detects overlap, preprocessing and multi-test leakage and offers quick fixes plus LLM-guided corrections.
+- **LeakageDetector 2.0 (Stevens Institute of Technology, ICSME 2025 tool track).** A VS Code extension that detects overlap, preprocessing and multi-test leakage and offers quick fixes and assisted corrections.
 - **LeakLens and FeatureLeakageLens (PyPI).** Train/test validity audits, AST checks for preprocessing leakage, and feature-leakage audits.
 - **Roth (2026), *Which Leakage Types Matter?* (arXiv:2604.04199).** Counterfactual experiments on 2,047 tabular datasets showing that leakage types differ by orders of magnitude, with normalisation leakage negligible and selection leakage dominant.
 - **Kapoor & Narayanan (2023), *Leakage and the reproducibility crisis in ML-based science*.** A taxonomy of leakage and its effect on published findings.

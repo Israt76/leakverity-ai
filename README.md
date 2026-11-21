@@ -1,13 +1,11 @@
-# LeakVerity AI
+# LeakVerity
 
 **Find the leak. Measure the damage. Test the claim.**
 
 LeakVerity checks whether a machine-learning result survives once data leakage is fixed. Upload a notebook and its dataset. LeakVerity runs the notebook in a sandbox, records what the experiment actually did, finds leaks, repairs them, re-runs the experiment with every combination of fixes, and issues a **Claim Survival Certificate**: *Supported*, *Overstated*, *Contradicted*, *Insufficient evidence*, or *Depends on review* when the answer hinges on a suspected leak only a person can confirm.
 
-> The AI investigates and explains. Re-executed code produces every number. Pre-registered rules decide the verdict. A person confirms what only a person can know.
+> Evidence-based checks identify possible leaks. Re-executed code produces every number. Pre-registered rules decide the verdict; a person confirms uncertain information.
 
-
-![Investigation screen](docs/screenshots/investigation.png)
 
 ## The demo in one paragraph
 
@@ -21,13 +19,9 @@ A synthetic hospital-readmission notebook claims *"a test AUC of 0.94, which sup
 
 Because the follow-up feature is only suspected, LeakVerity evaluates the claim both ways and reports **Depends on review**: Overstated if the feature is a leak, Supported (0.929) if it is legitimate. One click confirms it, and the audit re-runs with the decision recorded on the certificate. With it confirmed, re-running every combination of fixes on 6 splits gives a verified AUC of **0.709** (95% CI 0.679–0.739); the model's true AUC on fresh patients is 0.713. The Shapley allocation assigns most of the observed performance change in this synthetic demonstration to the `future_features` repair category, with a smaller share for test-set seed selection; the preprocessing category has negligible observed effect. These allocations are per repair category under the tested protocols, not isolated causal effects of individual flagged features. The corrected notebook is executed and checked against its own execution trace: it reproduces the replay engine's number to six decimals, nothing is fitted before the split, no record or patient is on both sides, the future feature is gone, and all seeds are reported (7/7 checks). For patients 65+ the AUC is only 0.60, so the claim about "all adult patients" fails. **Verdict once confirmed: Overstated.** A leak-free control notebook gets **Supported**, with zero findings.
 
-![Depends on review: the verdict under both scenarios, with Confirm / Mark as legitimate buttons](docs/screenshots/depends_on_review.png)
-
-![Impact screen](docs/screenshots/impact.png)
-
 ## Does it work? A benchmark with known ground truth
 
-`benchmarks/run_benchmark.py` generates 24 studies: random combinations of planted leaks, clean controls, and a decoy feature that sounds post-hoc but is legitimate. Each study comes from a known process, so the *true* AUC of the honestly trained model is measured on 5,000 fresh synthetic patients. These results use the rule-based reader (no AI key) and 3 replay splits per study.
+`benchmarks/run_benchmark.py` generates 24 studies: random combinations of planted leaks, clean controls, and a decoy feature that sounds post-hoc but is legitimate. Each study comes from a known process, so the *true* AUC of the honestly trained model is measured on 5,000 fresh synthetic patients. These results use the rule-based feature checks and 3 replay splits per study.
 
 | Measure | Result |
 |---|---|
@@ -52,20 +46,12 @@ Because the follow-up feature is only suspected, LeakVerity evaluates the claim 
 
 Twelve hand-written notebooks in varied coding styles, mostly on real bundled datasets (breast cancer, wine). They cover SMOTE before the split, SelectKBest on pure noise, a leak inside a helper function, cross-validation and `GridSearchCV` (where LeakVerity must abstain), a future-peeking rolling mean built in pandas, an ambiguous centred window over rows with no time order (which must be proposed, not removed), and a clean control with row-wise features. Expected verdicts come from an independent reference: each model re-implemented honestly and evaluated by repeated cross-validation. Results: **exact leak detection 12/12, verdict matches the reference 11/12, repairs verified 7/7, 0 false findings.** The pandas-level look-ahead leak (c09) was a miss before static look-ahead detection was added after review. The one remaining mismatch is the pure-noise notebook (claimed AUC 0.76): at the default 3 splits LeakVerity says *Insufficient evidence* because its CI still contains 0.76; in Thorough mode it returns **Contradicted** (verified 0.502). On real data, genuinely strong features such as `worst_radius` get a note, never a removal. See [`benchmarks/results/INDEPENDENT.md`](benchmarks/results/INDEPENDENT.md).
 
-### Live AI demonstration
-
-`benchmarks/ai_demo.py` audits a variant of the demo notebook where the post-discharge feature is renamed to a data-dictionary code, `ed_ct_30`. It records whether each reader identifies the feature's timing, the reason given, whether the AI's explanations pass the number guard, and the effect the replay engine measures independently. The AI row is produced only when an API key is set. **No AI result is claimed in this README until that run exists:** see [`benchmarks/results/AI_DEMO.md`](benchmarks/results/AI_DEMO.md).
-
-### AI reader vs rule-based reader
-
-`benchmarks/ai_vs_rules.py` has 15 features with known roles. Some leaks have cryptic names (`ed_ct_30`); some legitimate features have alarming names (`prior_readmissions`, `followup_appt_scheduled`). The rule-based reader proposes leaks from names and strength: **56% precision, 71% recall** as a proposal list. It misses the cryptic leaks and proposes four legitimate features with alarming names. Proposals are evaluated both ways, so a wrong proposal costs a review, not a wrong verdict. Better proposals are the gap the AI reader is designed to close. Run the script with an API key to add the AI row: [`benchmarks/results/AI_VS_RULES.md`](benchmarks/results/AI_VS_RULES.md).
-
 ## How it works
 
 | Stage | What happens |
 |---|---|
 | 1. Reproduce | The notebook runs unmodified in a sandbox. A tracer records every split (exact rows), fit (rows seen, overlap with the test set) and metric (and which labels it used). |
-| 2. Investigate | Execution evidence, data checks and an AI reading of the features against the prediction point produce findings, each with code location, evidence and a fix. Suspected features (from the AI, the rules, or look-ahead code without time-order evidence) are **proposed**, never removed automatically. |
+| 2. Investigate | Execution evidence, data checks and rule-based feature screening produce findings, each with code location, evidence and a fix. Suspected features (from name rules or look-ahead code without time-order evidence) are **proposed**, never removed automatically. |
 | 3. Repair | The corrected notebook keeps the author's data preparation and rewrites the evaluation (`# FIX` marks every change). It is **executed under the tracer**: its output must match the replay engine, and its own trace must show every targeted leak gone. |
 | 4. Measure | **Fidelity gate:** the reconstructed protocol must reproduce the reported number, or LeakVerity abstains. Then every combination of fixes is re-run on several splits. The observed score difference is allocated across **repair categories** using exact Shapley values, with **Nadeau–Bengio corrected** intervals. A category can cover multiple findings, so its share is a joint, protocol-dependent allocation—not a separately established causal effect for each feature. |
 | 5. Test the claim | On the corrected protocol, with the same model selection as the corrected result: stability across 20 re-splits, subgroup performance, and time-based validation (train on the past, test on later patients). Failures that contradict the claim's stated scope change the verdict; others are listed as caveats. |
@@ -82,14 +68,12 @@ pip install -r requirements.txt
 LEAKVERITY_ALLOW_UPLOADS=1 uvicorn app.main:app --port 7860   # open http://localhost:7860 (uploads on for local use)
 ```
 
-Click **Open the saved audit** for the instant demo, or **Run it live** (about 2 minutes on 2 CPU cores). The Docker image used for public hosting turns uploads off (demos still run live), because auditing executes the uploaded code. See [`docs/security.md`](docs/security.md). To enable the AI reader, set `ANTHROPIC_API_KEY` (or `OPENAI_API_KEY`) or paste a key into the form. Deployment to Hugging Face Spaces or Render: [`docs/deploy.md`](docs/deploy.md).
+Click **Open the saved audit** for the instant demo, or **Run it live** (about 2 minutes on 2 CPU cores). The Docker image used for public hosting turns uploads off (demos still run live), because auditing executes the uploaded code. See [`docs/security.md`](docs/security.md). Deployment to Hugging Face Spaces or Render: [`docs/deploy.md`](docs/deploy.md).
 
 ```bash
-python -m pytest -q tests                  # 41 tests, about 2 minutes
+python -m pytest -q tests                  # run the test suite
 python benchmarks/run_benchmark.py 24 7    # about 5 minutes
 python benchmarks/independent/build_data.py && python benchmarks/run_independent.py
-python benchmarks/ai_vs_rules.py           # add an API key to compare the AI reader
-python benchmarks/ai_demo.py               # live AI demonstration (needs an API key for the AI row)
 ```
 
 ## Scope and limitations
@@ -104,7 +88,7 @@ Leakage detection and quick fixes already exist: Yang et al. (ASE 2022); NBLyzer
 ## Project structure
 
 ```
-leakverity/        engine: tracer, sandbox, spec, replay, findings, semantic (AI), repair, survival, verdict, report
+leakverity/        engine: tracer, sandbox, spec, replay, findings, feature screening, repair, survival, verdict, report
 app/               FastAPI server and the web interface (app/static)
 examples/          demo dataset, leaky and clean notebooks, saved audits
 benchmarks/        ground-truth benchmark and results

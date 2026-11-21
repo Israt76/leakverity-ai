@@ -54,7 +54,7 @@ async function post(url, body) {
 function formOptions(form) {
   const fd = new FormData(form);
   const o = {};
-  for (const k of ["claim_text", "prediction_point", "group_col", "date_col", "subgroup_col", "api_key", "n_seeds", "known_leaks", "not_leaks"]) o[k] = fd.get(k) || "";
+  for (const k of ["claim_text", "prediction_point", "group_col", "date_col", "subgroup_col", "n_seeds", "known_leaks", "not_leaks"]) o[k] = fd.get(k) || "";
   return o;
 }
 
@@ -155,7 +155,7 @@ function claimHead() {
   const p = R.protocol || {};
   const text = c.text || (p.reported !== undefined ? `Reported ${p.metric_label}: ${f3(p.reported)}` : "No claim identified");
   return `<div class="claimhead"><div><q>${esc(text)}</q>
-    <div class="meta">${esc(R.inputs.code)} with ${esc(R.inputs.data)} · ${R.ai && R.ai.enabled ? "AI reader: " + esc(R.ai.model) : "Rule-based reader (no AI key)"} · audit ${esc(R.id)}</div></div>
+    <div class="meta">${esc(R.inputs.code)} with ${esc(R.inputs.data)} · Rule-based feature checks · audit ${esc(R.id)}</div></div>
     <div class="stamp ${cls}">${esc(v.verdict || "")}${v.provisional ? " (provisional)" : ""}${v.conditional ? " (conditional)" : ""}</div></div>
     ${v.conditional ? `<div class="caveats"><b>Conditional verdict.</b> It assumes ${esc((v.conditional_on || []).join(", "))} ${(v.conditional_on || []).length === 1 ? "is" : "are"} legitimate. Resolve the review items on the Investigation tab.</div>` : ""}
     ${scen}
@@ -230,7 +230,7 @@ function renderInvestigate() {
     <h2>${finds.length ? `${finds.filter((f) => !f.needs_review).length} leak${finds.filter((f) => !f.needs_review).length === 1 ? "" : "s"} found` + (finds.some((f) => f.needs_review) ? `, ${finds.filter((f) => f.needs_review).length} feature${finds.filter((f) => f.needs_review).length === 1 ? "" : "s"} to review` : "") : "No leakage found"}</h2>
     ${finds.length ? items : `<p class="none-found">The split, preprocessing, model selection and features all passed. The replay still re-measures the result and runs the survival tests.</p>`}
     ${(R.options && ((R.options.known_leaks || []).length || (R.options.not_leaks || []).length)) ? `<p class="note">Your decisions in this audit: ${(R.options.known_leaks || []).map((c) => `<code>${esc(c)}</code> confirmed as a leak`).concat((R.options.not_leaks || []).map((c) => `<code>${esc(c)}</code> marked legitimate`)).join("; ")}.</p>` : ""}
-    <p class="small">Features were checked against the prediction point by ${audit.source === "ai" ? "the AI reader" : "the rule-based reader"}${audit.prediction_point ? ` (prediction point: ${esc(audit.prediction_point)})` : ""}. Every flag is a hypothesis until the replay measures it.</p>`;
+    <p class="small">Features were checked against the prediction point by the rule-based reader${audit.prediction_point ? ` (prediction point: ${esc(audit.prediction_point)})` : ""}. Every flag is a hypothesis until the replay measures it.</p>`;
 }
 
 document.addEventListener("click", async (e) => {

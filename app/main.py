@@ -25,7 +25,7 @@ ALLOW_UPLOADS = os.getenv("LEAKVERITY_ALLOW_UPLOADS", "0") == "1"      # off unl
 JOB_TTL_SECONDS = int(os.getenv("LEAKVERITY_JOB_TTL", str(2 * 3600)))    # uploaded code and results are kept 2 h at most
 MAX_JOBS = int(os.getenv("LEAKVERITY_MAX_JOBS", "50"))
 
-app = FastAPI(title="LeakVerity AI", version="1.0.0")
+app = FastAPI(title="LeakVerity", version="1.0.0")
 JOBS: dict[str, dict] = {}
 RUN_LOCK = threading.Semaphore(int(os.getenv("LEAKVERITY_CONCURRENCY", "1")))
 
@@ -56,17 +56,24 @@ def _start(code_name, code_bytes, data_name, data_bytes, opts: Options) -> str:
                  "_files": (code_name, code_bytes, data_name, data_bytes), "_opts": opts}
 
     def on_progress(entry, log):
-        JOBS[jid]["log"] = list(log)
+        job = JOBS.get(jid)
+        if job is not None:
+            job["log"] = list(log)
 
     def work():
         with RUN_LOCK:
+            if jid not in JOBS:
+                return
             JOBS[jid]["status"] = "running"
             try:
-                JOBS[jid]["result"] = audit(code_name, code_bytes, data_name, data_bytes, opts, on_progress)
-                JOBS[jid]["status"] = "done"
+                result = audit(code_name, code_bytes, data_name, data_bytes, opts, on_progress)
+                if jid in JOBS:
+                    JOBS[jid]["result"] = result
+                    JOBS[jid]["status"] = "done"
             except Exception as e:  # noqa: BLE001
-                JOBS[jid]["status"] = "error"
-                JOBS[jid]["error"] = f"{type(e).__name__}: {e}"
+                if jid in JOBS:
+                    JOBS[jid]["status"] = "error"
+                    JOBS[jid]["error"] = f"{type(e).__name__}: {e}"
     threading.Thread(target=work, daemon=True).start()
     return jid
 
@@ -80,16 +87,11 @@ def _opts(form: dict) -> Options:
         o.n_seeds = max(2, min(10, int(form.get("n_seeds") or 3)))
     except ValueError:
         o.n_seeds = 3
-    o.use_ai = form.get("use_ai", "true") != "false"
     for k in ("known_leaks", "not_leaks"):
         v = form.get(k) or ""
         if isinstance(v, str):
             v = [x.strip() for x in v.split(",") if x.strip()]
         setattr(o, k, v or None)
-    key = (form.get("api_key") or "").strip()
-    if key:
-        o.api_key = key
-        o.provider = "openai" if key.startswith("sk-") and not key.startswith("sk-ant") else "anthropic"
     return o
 
 

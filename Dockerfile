@@ -1,4 +1,4 @@
-# LeakVerity AI — web app (Hugging Face Spaces / Render / any container host)
+# LeakVerity — web app (Hugging Face Spaces / Render / any container host)
 FROM python:3.13-slim
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 OMP_NUM_THREADS=2 \
     LEAKVERITY_ALLOW_UPLOADS=0

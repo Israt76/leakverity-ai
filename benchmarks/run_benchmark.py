@@ -125,7 +125,7 @@ def main(n: int = 24, seed: int = 7):
     for i in range(n):
         sc = make_scenario(i, rng)
         r = audit(f"{sc['id']}.py", sc["code"].encode(), "study.csv", sc["csv"],
-                  Options(n_seeds=3, use_ai=False, run_survival=False, group_col="patient_id"))
+                  Options(n_seeds=3, run_survival=False, group_col="patient_id"))
         # a proposed leak counts as detecting a feature leak (it is evaluated both ways)
         found = sorted({("future_features" if f["fix"] == "proposed_features" else f["fix"]) for f in r.get("findings", []) if f.get("fix")})
         rp = r.get("replay") or {}
@@ -191,7 +191,7 @@ def summarise(rows):
 def markdown(s, rows):
     pct = lambda x: "—" if x is None else f"{100 * x:.0f}%"  # noqa: E731
     lines = ["# LeakVerity benchmark", "",
-             f"{s['scenarios']} generated studies ({s['clean']} clean controls), rule-based reader (no AI key), 3 replay splits each. "
+             f"{s['scenarios']} generated studies ({s['clean']} clean controls), rule-based feature checks, 3 replay splits each. "
              "Ground truth = the honestly trained model evaluated on 5,000 fresh synthetic patients from the same process.", "",
              "| Measure | Result |", "|---|---|",
              f"| Leak detection precision | {pct(s['precision'])} |", f"| Leak detection recall | {pct(s['recall'])} |",

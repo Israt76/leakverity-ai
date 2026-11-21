@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LeakVerity AI — does your model's result survive?</title>
+<title>LeakVerity — does your model's result survive?</title>
 <meta name="description" content="Find the leak. Measure the damage. Test the claim. LeakVerity re-executes machine-learning experiments to verify whether their reported results survive leak-free evaluation.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,9 +12,9 @@
 </head>
 <body>
 <header class="top">
-  <a class="brand" href="./" aria-label="LeakVerity AI home">
+  <a class="brand" href="./" aria-label="LeakVerity home">
     <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M14 3c4.5 6 8 10.4 8 14.2A8 8 0 0 1 6 17.2C6 13.4 9.5 9 14 3z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.5 17.5l3 3 6-6.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-    <span>LeakVerity<span class="ai"> AI</span></span>
+    <span>LeakVerity</span>
   </a>
   <p class="tag">Find the leak. Measure the damage. Test the claim.</p>
   <div class="top-right" id="topRight"></div>
@@ -66,7 +66,6 @@
               <label><span class="lbl">Features not known at prediction time</span><input name="known_leaks" placeholder="ed_ct_30, cm_call_outcome"></label>
               <label><span class="lbl">Features confirmed legitimate</span><input name="not_leaks" placeholder="prior_readmissions"></label>
             </div>
-            <label><span class="lbl">AI key (Anthropic or OpenAI, used for this audit only)</span><input name="api_key" type="password" autocomplete="off" placeholder="Leave empty for the rule-based reader"></label>
           </details>
           <fieldset class="depth">
             <legend class="lbl">Replay depth</legend>
@@ -94,13 +93,13 @@
         <h2>How a verdict is reached</h2>
         <ol class="how-steps">
           <li><b>Reproduce.</b> Your code runs in a sandbox while LeakVerity records every split, fit and score.</li>
-          <li><b>Investigate.</b> Execution evidence, data checks and an AI reading of the features flag possible leaks.</li>
+          <li><b>Investigate.</b> Execution evidence and rule-based feature checks flag potential leaks for review.</li>
           <li><b>Repair.</b> Supported leakage patterns receive validated repairs; suspected features require human confirmation. The corrected code is executed and checked.</li>
           <li><b>Measure.</b> The experiment is re-run with every combination of fixes over several splits.</li>
           <li><b>Test the claim.</b> Stability, subgroup and time-based checks probe the claim's scope.</li>
           <li><b>Certify.</b> Fixed rules turn the evidence into a verdict, with hashes for every input.</li>
         </ol>
-        <p class="principle">The AI investigates and explains. Re-executed code produces every number. Pre-registered rules decide the verdict.</p>
+        <p class="principle">Re-executed code produces every number. Transparent rules decide the verdict; uncertain features require your review.</p>
       </div>
     </section>
 
